@@ -1,0 +1,44 @@
+-- Get all subscriptions (excluding deleted)
+selectAllSubscriptions:
+SELECT * FROM Subscription
+WHERE isDeleted = 0
+ORDER BY nextBillingDate ASC;
+
+-- Get subscription by id
+selectSubscriptionById:
+SELECT * FROM Subscription
+WHERE id = ? AND isDeleted = 0;
+
+-- Get active subscriptions
+selectActiveSubscriptions:
+SELECT * FROM Subscription
+WHERE isDeleted = 0 AND isActive = 1
+ORDER BY nextBillingDate ASC;
+
+-- Insert subscription
+insertSubscription:
+INSERT INTO Subscription(id, name, amount, category, billingCycle, nextBillingDate, isActive, version, updatedAt, deviceId, isDeleted, syncState)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update subscription
+updateSubscription:
+UPDATE Subscription
+SET name = ?, amount = ?, category = ?, billingCycle = ?, nextBillingDate = ?, isActive = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
+WHERE id = ?;
+
+-- Delete subscription (soft delete)
+deleteSubscription:
+UPDATE Subscription
+SET isDeleted = 1, syncState = 'PENDING', updatedAt = ?
+WHERE id = ?;
+
+-- Get pending sync subscriptions
+selectPendingSubscriptions:
+SELECT * FROM Subscription
+WHERE syncState = 'PENDING' OR syncState = 'CONFLICT';
+
+-- Update sync state
+updateSubscriptionSyncState:
+UPDATE Subscription
+SET syncState = ?
+WHERE id = ?;

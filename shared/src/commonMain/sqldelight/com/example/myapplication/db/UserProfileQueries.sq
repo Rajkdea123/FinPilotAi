@@ -1,0 +1,32 @@
+-- Get user profile
+selectUserProfile:
+SELECT * FROM UserProfile
+WHERE id = 'current' AND isDeleted = 0;
+
+-- Insert user profile
+insertUserProfile:
+INSERT INTO UserProfile(id, name, email, avatarUrl, version, updatedAt, deviceId, isDeleted, syncState)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update user profile
+updateUserProfile:
+UPDATE UserProfile
+SET name = ?, email = ?, avatarUrl = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
+WHERE id = ?;
+
+-- Delete user profile (soft delete)
+deleteUserProfile:
+UPDATE UserProfile
+SET isDeleted = 1, syncState = 'PENDING', updatedAt = ?
+WHERE id = ?;
+
+-- Get pending sync user profiles
+selectPendingUserProfiles:
+SELECT * FROM UserProfile
+WHERE syncState = 'PENDING' OR syncState = 'CONFLICT';
+
+-- Update sync state
+updateUserProfileSyncState:
+UPDATE UserProfile
+SET syncState = ?
+WHERE id = ?;

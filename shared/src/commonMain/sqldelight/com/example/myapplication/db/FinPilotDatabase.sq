@@ -1,0 +1,96 @@
+CREATE TABLE Expense (
+    id TEXT NOT NULL PRIMARY KEY,
+    amount INTEGER NOT NULL, -- stored as paise (Long)
+    category TEXT NOT NULL,
+    paymentMethod TEXT NOT NULL,
+    date INTEGER NOT NULL, -- timestamp in milliseconds
+    description TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    updatedAt INTEGER NOT NULL, -- timestamp in milliseconds
+    deviceId TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0, -- 0 = false, 1 = true (tombstone)
+    syncState TEXT NOT NULL DEFAULT 'SYNCED' -- SYNCED, PENDING, CONFLICT
+);
+
+CREATE TABLE Budget (
+    id TEXT NOT NULL PRIMARY KEY,
+    total INTEGER NOT NULL, -- stored as paise
+    category TEXT NOT NULL,
+    limit INTEGER NOT NULL, -- stored as paise
+    version INTEGER NOT NULL DEFAULT 1,
+    updatedAt INTEGER NOT NULL,
+    deviceId TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
+    syncState TEXT NOT NULL DEFAULT 'SYNCED'
+);
+
+CREATE TABLE Insight (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
+    category TEXT NOT NULL,
+    date INTEGER NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    updatedAt INTEGER NOT NULL,
+    deviceId TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
+    syncState TEXT NOT NULL DEFAULT 'SYNCED'
+);
+
+CREATE TABLE Subscription (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    amount INTEGER NOT NULL, -- stored as paise
+    category TEXT NOT NULL,
+    billingCycle TEXT NOT NULL, -- MONTHLY, YEARLY, WEEKLY
+    nextBillingDate INTEGER NOT NULL,
+    isActive INTEGER NOT NULL DEFAULT 1,
+    version INTEGER NOT NULL DEFAULT 1,
+    updatedAt INTEGER NOT NULL,
+    deviceId TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
+    syncState TEXT NOT NULL DEFAULT 'SYNCED'
+);
+
+CREATE TABLE ChatMessage (
+    id TEXT NOT NULL PRIMARY KEY,
+    role TEXT NOT NULL, -- USER, ASSISTANT
+    content TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    updatedAt INTEGER NOT NULL,
+    deviceId TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
+    syncState TEXT NOT NULL DEFAULT 'SYNCED'
+);
+
+CREATE TABLE UserProfile (
+    id TEXT NOT NULL PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    avatarUrl TEXT,
+    version INTEGER NOT NULL DEFAULT 1,
+    updatedAt INTEGER NOT NULL,
+    deviceId TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
+    syncState TEXT NOT NULL DEFAULT 'SYNCED'
+);
+
+CREATE TABLE SyncOutbox (
+    id TEXT NOT NULL PRIMARY KEY,
+    tableName TEXT NOT NULL,
+    recordId TEXT NOT NULL,
+    operation TEXT NOT NULL, -- CREATE, UPDATE, DELETE
+    payload TEXT NOT NULL, -- JSON payload
+    createdAt INTEGER NOT NULL,
+    isProcessed INTEGER NOT NULL DEFAULT 0,
+    processedAt INTEGER
+);
+
+-- Indexes for common queries
+CREATE INDEX idx_expense_date ON Expense(date DESC);
+CREATE INDEX idx_expense_category ON Expense(category);
+CREATE INDEX idx_expense_sync ON Expense(syncState, isDeleted);
+CREATE INDEX idx_subscription_active ON Subscription(isActive);
+CREATE INDEX idx_chat_timestamp ON ChatMessage(timestamp DESC);
+CREATE INDEX idx_sync_outbox_processed ON SyncOutbox(isProcessed, createdAt);

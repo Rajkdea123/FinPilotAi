@@ -9,6 +9,7 @@ import com.example.myapplication.domain.repository.SettingsRepository
 import com.example.myapplication.domain.usecase.GetProfileStatsUseCase
 import com.example.myapplication.domain.usecase.GetProfileUseCase
 import com.example.myapplication.domain.usecase.SignOutUseCase
+import com.example.myapplication.platform.storage.UserPreferencesStorage
 import com.example.myapplication.ui.theme.ThemeMode
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 data class ProfileUiState(
     val profile: UserProfile? = null,
@@ -55,7 +58,8 @@ class ProfileViewModel(
     private val getProfileStatsUseCase: GetProfileStatsUseCase,
     private val signOutUseCase: SignOutUseCase,
     private val settingsRepository: SettingsRepository
-) : ViewModel() {
+) : ViewModel(), KoinComponent {
+    private val userPreferencesStorage: UserPreferencesStorage by inject()
 
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
@@ -135,6 +139,7 @@ class ProfileViewModel(
             ProfileEvent.SignOutConfirmed -> {
                 viewModelScope.launch {
                     signOutUseCase()
+                    userPreferencesStorage.clearAll()
                     _uiState.update { it.copy(showSignOutDialog = false) }
                     _navigationEvents.send(ProfileNavigationEvent.NavigateToLogin)
                 }

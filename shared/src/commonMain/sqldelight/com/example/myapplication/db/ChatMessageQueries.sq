@@ -1,0 +1,38 @@
+-- Get all chat messages (excluding deleted)
+selectAllChatMessages:
+SELECT * FROM ChatMessage
+WHERE isDeleted = 0
+ORDER BY timestamp ASC;
+
+-- Get chat message by id
+selectChatMessageById:
+SELECT * FROM ChatMessage
+WHERE id = ? AND isDeleted = 0;
+
+-- Insert chat message
+insertChatMessage:
+INSERT INTO ChatMessage(id, role, content, timestamp, version, updatedAt, deviceId, isDeleted, syncState)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update chat message
+updateChatMessage:
+UPDATE ChatMessage
+SET role = ?, content = ?, timestamp = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
+WHERE id = ?;
+
+-- Delete chat message (soft delete)
+deleteChatMessage:
+UPDATE ChatMessage
+SET isDeleted = 1, syncState = 'PENDING', updatedAt = ?
+WHERE id = ?;
+
+-- Get pending sync chat messages
+selectPendingChatMessages:
+SELECT * FROM ChatMessage
+WHERE syncState = 'PENDING' OR syncState = 'CONFLICT';
+
+-- Update sync state
+updateChatMessageSyncState:
+UPDATE ChatMessage
+SET syncState = ?
+WHERE id = ?;

@@ -3,7 +3,9 @@ package com.example.myapplication.ui.addexpense
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.model.Category
+import com.example.myapplication.domain.model.Expense
 import com.example.myapplication.domain.model.ParsedExpense
+import com.example.myapplication.domain.repository.ExpenseRepository
 import com.example.myapplication.domain.usecase.ParseExpenseTextUseCase
 import com.example.myapplication.domain.usecase.SaveExpenseUseCase
 import kotlinx.coroutines.Job
@@ -24,6 +26,8 @@ sealed class ParseState {
 }
 
 data class AddExpenseUiState(
+    val expenseId: String? = null,
+    val isEditMode: Boolean = false,
     val quickText: String = "",
     val parseState: ParseState = ParseState.Idle,
     val amount: String = "",
@@ -52,14 +56,39 @@ sealed class AddExpenseEvent {
 }
 
 class AddExpenseViewModel(
+    private val expenseRepository: ExpenseRepository,
     private val parseExpenseTextUseCase: ParseExpenseTextUseCase,
-    private val saveExpenseUseCase: SaveExpenseUseCase
+    private val saveExpenseUseCase: SaveExpenseUseCase,
+    expenseId: String? = null
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(AddExpenseUiState())
+    private val _uiState = MutableStateFlow(AddExpenseUiState(expenseId = expenseId, isEditMode = expenseId != null))
     val uiState: StateFlow<AddExpenseUiState> = _uiState.asStateFlow()
 
     private var parseJob: Job? = null
+
+    init {
+        if (expenseId != null) {
+            loadExpense(expenseId)
+        }
+    }
+
+    private suspend fun loadExpense(id: String) {
+        val expense = expenseRepository.getExpenseById(id)
+        if (expense != null) {
+            val timeZone = TimeZone.currentSystemDefault()
+            _uiState.value = _uiState.value.copy(
+                amount = (expense.amountPaise / 100).toString(),
+                category = expense.category,
+                paymentMethod = expense.paymentMethod,
+                date = expense.timestamp.toLocalDateTime(timeZone).date,
+                description = expense.merchant,
+                manuallyEditedAmount = true,
+                manuallyEditedCategory = true,
+                manuallyEditedMerchant = true
+            )
+        }
+    }
 
     fun onEvent(event: AddExpenseEvent) {
         when (event) {
@@ -164,13 +193,27 @@ class AddExpenseViewModel(
         viewModelScope.launch {
             _uiState.value = state.copy(isSaving = true)
             
-            saveExpenseUseCase(
-                amountPaise = amountPaise,
-                category = state.category,
-                paymentMethod = state.paymentMethod,
-                date = state.date,
-                description = state.description.ifBlank { null }
-            )
+            if (state.isEditMode && state.expenseId != null) {
+                // Update existing expense
+                val expense = Expense(
+                    id = state.expenseId,
+                    amountPaise = amountPaise,
+                    category = state.category,
+                    merchant = state.description.ifBlank { "Expense" },
+                    paymentMethod = state.paymentMethod,
+                    timestamp = state.date.atTime(12, 0).toInstant(TimeZone.currentSystemDefault())
+                )
+                expenseRepository.updateExpense(expense)
+            } else {
+                // Add new expense
+                saveExpenseUseCase(
+                    amountPaise = amountPaise,
+                    category = state.category,
+                    paymentMethod = state.paymentMethod,
+                    date = state.date,
+                    description = state.description.ifBlank { null }
+                )
+            }
             
             _uiState.value = state.copy(isSaving = false)
             // Navigation handled by caller observing success

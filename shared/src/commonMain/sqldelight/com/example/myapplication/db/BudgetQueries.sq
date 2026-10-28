@@ -1,0 +1,42 @@
+-- Get all budgets (excluding deleted)
+selectAllBudgets:
+SELECT * FROM Budget
+WHERE isDeleted = 0;
+
+-- Get budget by id
+selectBudgetById:
+SELECT * FROM Budget
+WHERE id = ? AND isDeleted = 0;
+
+-- Get budget by category
+selectBudgetByCategory:
+SELECT * FROM Budget
+WHERE category = ? AND isDeleted = 0;
+
+-- Insert budget
+insertBudget:
+INSERT INTO Budget(id, total, category, limit, version, updatedAt, deviceId, isDeleted, syncState)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update budget
+updateBudget:
+UPDATE Budget
+SET total = ?, category = ?, limit = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
+WHERE id = ?;
+
+-- Delete budget (soft delete)
+deleteBudget:
+UPDATE Budget
+SET isDeleted = 1, syncState = 'PENDING', updatedAt = ?
+WHERE id = ?;
+
+-- Get pending sync budgets
+selectPendingBudgets:
+SELECT * FROM Budget
+WHERE syncState = 'PENDING' OR syncState = 'CONFLICT';
+
+-- Update sync state
+updateBudgetSyncState:
+UPDATE Budget
+SET syncState = ?
+WHERE id = ?;

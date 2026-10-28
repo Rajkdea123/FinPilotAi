@@ -58,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.domain.model.Category
+import org.koin.compose.koinInject
 import com.example.myapplication.ui.icons.AppIcons
 import com.example.myapplication.ui.theme.AppTheme
 import com.example.myapplication.ui.theme.ThemeMode
@@ -72,7 +73,8 @@ import kotlinx.datetime.toLocalDateTime
 fun AddExpenseScreen(
     onBack: () -> Unit,
     onExpenseAdded: () -> Unit,
-    viewModel: AddExpenseViewModel = viewModel()
+    expenseId: String? = null,
+    viewModel: AddExpenseViewModel = viewModel { AddExpenseViewModel(koinInject(), koinInject(), koinInject(), expenseId) }
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val showDatePicker = remember { mutableStateOf(false) }
@@ -121,7 +123,7 @@ fun AddExpenseScreen(
                 )
             }
             Text(
-                text = "Add expense",
+                text = if (uiState.isEditMode) "Edit expense" else "Add expense",
                 color = MaterialTheme.colorScheme.onBackground,
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontSize = 24.sp,
@@ -313,7 +315,7 @@ fun AddExpenseScreen(
                     )
                 } else {
                     Text(
-                        text = "Save expense",
+                        text = if (uiState.isEditMode) "Save changes" else "Save expense",
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp
