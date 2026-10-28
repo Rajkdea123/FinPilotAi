@@ -6,10 +6,8 @@ import kotlinx.datetime.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-expect val isDebugBuild: Boolean
-
 suspend fun seedDatabase(database: FinPilotDatabase, dispatchers: AppCoroutineDispatchers, clock: Clock) {
-    if (!isDebugBuild) return
+    if (!isDebugBuild()) return
     
     withContext(dispatchers.io) {
         database.transaction {
@@ -43,7 +41,7 @@ suspend fun seedDatabase(database: FinPilotDatabase, dispatchers: AppCoroutineDi
                 id = budgetId,
                 total = 500000L, // 5000 rupees
                 category = "TOTAL",
-                limit = 500000L,
+                budgetLimit = 500000L,
                 version = 1,
                 updatedAt = clock.now().toEpochMilliseconds(),
                 deviceId = "device-1",
