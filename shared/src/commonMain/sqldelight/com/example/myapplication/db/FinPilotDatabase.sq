@@ -16,7 +16,7 @@ CREATE TABLE Budget (
     id TEXT NOT NULL PRIMARY KEY,
     total INTEGER NOT NULL, -- stored as paise
     category TEXT NOT NULL,
-    limit INTEGER NOT NULL, -- stored as paise
+    budgetLimit INTEGER NOT NULL, -- stored as paise
     version INTEGER NOT NULL DEFAULT 1,
     updatedAt INTEGER NOT NULL,
     deviceId TEXT NOT NULL,

@@ -15,13 +15,13 @@ WHERE category = ? AND isDeleted = 0;
 
 -- Insert budget
 insertBudget:
-INSERT INTO Budget(id, total, category, limit, version, updatedAt, deviceId, isDeleted, syncState)
+INSERT INTO Budget(id, total, category, budgetLimit, version, updatedAt, deviceId, isDeleted, syncState)
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Update budget
 updateBudget:
 UPDATE Budget
-SET total = ?, category = ?, limit = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
+SET total = ?, category = ?, budgetLimit = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
 WHERE id = ?;
 
 -- Delete budget (soft delete)

@@ -31,8 +31,8 @@ class SqlDelightBudgetRepository(
                 .mapToList(dispatchers.io)
                 .map { entities ->
                     val total = entities.firstOrNull()?.total ?: 0L
-                    val byCategory = entities.associate { 
-                        Category.valueOf(it.category) to it.limit 
+                    val byCategory = entities.associate {
+                        Category.valueOf(it.category) to it.budgetLimit
                     }
                     Budget(total, byCategory)
                 }
@@ -58,7 +58,7 @@ class SqlDelightBudgetRepository(
                     id = totalId,
                     total = budget.totalPaise,
                     category = "TOTAL",
-                    limit = budget.totalPaise,
+                    budgetLimit = budget.totalPaise,
                     version = 1,
                     updatedAt = clock.now().toEpochMilliseconds(),
                     deviceId = "device-1",
@@ -74,7 +74,7 @@ class SqlDelightBudgetRepository(
                         id = categoryId,
                         total = budget.totalPaise,
                         category = category.name,
-                        limit = limit,
+                        budgetLimit = limit,
                         version = 1,
                         updatedAt = clock.now().toEpochMilliseconds(),
                         deviceId = "device-1",
