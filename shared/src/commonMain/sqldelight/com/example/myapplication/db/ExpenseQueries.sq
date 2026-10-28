@@ -69,8 +69,8 @@ GROUP BY category;
 -- Get month summary (total spent, by category)
 selectMonthSummary:
 SELECT 
-    SUM(amount) as totalSpent,
-    COUNT(*) as transactionCount
+    SUM(amount),
+    COUNT(*)
 FROM Expense
 WHERE isDeleted = 0
 AND strftime('%Y-%m', date/1000, 'unixepoch') = ?;
