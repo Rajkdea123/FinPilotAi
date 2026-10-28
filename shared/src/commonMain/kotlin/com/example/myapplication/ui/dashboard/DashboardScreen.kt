@@ -53,8 +53,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.domain.model.Category
+import com.example.myapplication.ui.components.ExpenseRow
+import com.example.myapplication.ui.components.SyncStatusIndicator
 import com.example.myapplication.ui.icons.AppIcons
 import com.example.myapplication.ui.theme.AppTheme
+import org.koin.compose.koinInject
 import com.example.myapplication.ui.theme.ThemeMode
 import com.example.myapplication.util.MoneyFormatter
 import kotlinx.datetime.Clock
@@ -65,9 +68,12 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun DashboardScreen(
     onNavigateToInsights: () -> Unit = {},
-    viewModel: DashboardViewModel = viewModel()
+    onNavigateToTransactions: () -> Unit = {},
+    viewModel: DashboardViewModel = viewModel(),
+    syncManager: com.example.myapplication.sync.SyncManager = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val syncStatus by syncManager.syncStatus.collectAsStateWithLifecycle()
     var isRefreshing by remember { mutableStateOf(false) }
 
     PullToRefreshBox(
@@ -92,7 +98,7 @@ fun DashboardScreen(
             }
 
             item {
-                Header(onNavigateToInsights = onNavigateToInsights)
+                Header(onNavigateToInsights = onNavigateToInsights, syncStatus = syncStatus)
             }
 
             item {
@@ -135,7 +141,7 @@ fun DashboardScreen(
                 }
 
                 item {
-                    RecentTransactionsHeader(onSeeAll = {})
+                    RecentTransactionsHeader(onSeeAll = onNavigateToTransactions)
                 }
 
                 items(uiState.recentExpenses) { expense ->
@@ -147,7 +153,10 @@ fun DashboardScreen(
 }
 
 @Composable
-private fun Header(onNavigateToInsights: () -> Unit = {}) {
+private fun Header(
+    onNavigateToInsights: () -> Unit = {},
+    syncStatus: com.example.myapplication.sync.SyncStatus
+) {
     val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
     val hour = currentTime.hour
     val greeting = when (hour) {
@@ -180,20 +189,32 @@ private fun Header(onNavigateToInsights: () -> Unit = {}) {
             )
         }
 
-        IconButton(
-            onClick = onNavigateToInsights,
-            modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surface)
-                .semantics { contentDescription = "Notifications" }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                painter = rememberVectorPainter(AppIcons.BellIcon),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.size(22.dp)
+            SyncStatusIndicator(
+                status = com.example.myapplication.ui.components.SyncStatus(
+                    isSyncing = syncStatus.isSyncing,
+                    isOnline = syncStatus.isOnline,
+                    pendingChanges = syncStatus.pendingChanges
+                )
             )
+            IconButton(
+                onClick = onNavigateToInsights,
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .semantics { contentDescription = "Notifications" }
+            ) {
+                Icon(
+                    painter = rememberVectorPainter(AppIcons.BellIcon),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.size(22.dp)
+                )
+            }
         }
     }
 }

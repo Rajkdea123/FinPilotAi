@@ -1,0 +1,101 @@
+-- Get all expenses (excluding deleted)
+selectAllExpenses:
+SELECT * FROM Expense
+WHERE isDeleted = 0
+ORDER BY date DESC;
+
+-- Get expense by id
+selectExpenseById:
+SELECT * FROM Expense
+WHERE id = ? AND isDeleted = 0;
+
+-- Insert expense
+insertExpense:
+INSERT INTO Expense(id, amount, category, paymentMethod, date, description, version, updatedAt, deviceId, isDeleted, syncState)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update expense
+updateExpense:
+UPDATE Expense
+SET amount = ?, category = ?, paymentMethod = ?, date = ?, description = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
+WHERE id = ?;
+
+-- Delete expense (soft delete)
+deleteExpense:
+UPDATE Expense
+SET isDeleted = 1, syncState = 'PENDING', updatedAt = ?
+WHERE id = ?;
+
+-- Filter expenses by date range
+selectExpensesByDateRange:
+SELECT * FROM Expense
+WHERE isDeleted = 0
+AND date >= ? AND date <= ?
+ORDER BY date DESC;
+
+-- Filter expenses by category
+selectExpensesByCategory:
+SELECT * FROM Expense
+WHERE isDeleted = 0 AND category = ?
+ORDER BY date DESC;
+
+-- Filter expenses by payment method
+selectExpensesByPaymentMethod:
+SELECT * FROM Expense
+WHERE isDeleted = 0 AND paymentMethod = ?
+ORDER BY date DESC;
+
+-- Search expenses by description
+searchExpenses:
+SELECT * FROM Expense
+WHERE isDeleted = 0 AND description LIKE ?
+ORDER BY date DESC;
+
+-- Get expenses for a specific month (grouped by day)
+selectExpensesByMonth:
+SELECT * FROM Expense
+WHERE isDeleted = 0
+AND strftime('%Y-%m', date/1000, 'unixepoch') = ?
+ORDER BY date DESC;
+
+-- Get category totals for a month
+selectCategoryTotalsByMonth:
+SELECT category, SUM(amount) as total
+FROM Expense
+WHERE isDeleted = 0
+AND strftime('%Y-%m', date/1000, 'unixepoch') = ?
+GROUP BY category;
+
+-- Get month summary (total spent, by category)
+selectMonthSummary:
+SELECT 
+    SUM(amount) as totalSpent,
+    COUNT(*) as transactionCount
+FROM Expense
+WHERE isDeleted = 0
+AND strftime('%Y-%m', date/1000, 'unixepoch') = ?;
+
+-- Get expenses for a specific week
+selectExpensesByWeek:
+SELECT * FROM Expense
+WHERE isDeleted = 0
+AND date >= ? AND date <= ?
+ORDER BY date DESC;
+
+-- Get expenses for a specific year
+selectExpensesByYear:
+SELECT * FROM Expense
+WHERE isDeleted = 0
+AND strftime('%Y', date/1000, 'unixepoch') = ?
+ORDER BY date DESC;
+
+-- Get pending sync expenses
+selectPendingExpenses:
+SELECT * FROM Expense
+WHERE syncState = 'PENDING' OR syncState = 'CONFLICT';
+
+-- Update sync state
+updateExpenseSyncState:
+UPDATE Expense
+SET syncState = ?
+WHERE id = ?;

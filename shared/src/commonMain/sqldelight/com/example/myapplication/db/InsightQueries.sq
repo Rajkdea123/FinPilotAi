@@ -1,0 +1,44 @@
+-- Get all insights (excluding deleted)
+selectAllInsights:
+SELECT * FROM Insight
+WHERE isDeleted = 0
+ORDER BY date DESC;
+
+-- Get insight by id
+selectInsightById:
+SELECT * FROM Insight
+WHERE id = ? AND isDeleted = 0;
+
+-- Get insights by category
+selectInsightsByCategory:
+SELECT * FROM Insight
+WHERE isDeleted = 0 AND category = ?
+ORDER BY date DESC;
+
+-- Insert insight
+insertInsight:
+INSERT INTO Insight(id, title, content, category, date, version, updatedAt, deviceId, isDeleted, syncState)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Update insight
+updateInsight:
+UPDATE Insight
+SET title = ?, content = ?, category = ?, date = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
+WHERE id = ?;
+
+-- Delete insight (soft delete)
+deleteInsight:
+UPDATE Insight
+SET isDeleted = 1, syncState = 'PENDING', updatedAt = ?
+WHERE id = ?;
+
+-- Get pending sync insights
+selectPendingInsights:
+SELECT * FROM Insight
+WHERE syncState = 'PENDING' OR syncState = 'CONFLICT';
+
+-- Update sync state
+updateInsightSyncState:
+UPDATE Insight
+SET syncState = ?
+WHERE id = ?;

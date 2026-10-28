@@ -67,6 +67,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 fun LoginScreen(
     onLoggedIn: () -> Unit,
     onCreateAccount: () -> Unit,
+    onForgotPassword: () -> Unit = {},
     viewModel: LoginViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -76,6 +77,13 @@ fun LoginScreen(
     LaunchedEffect(uiState.isLoading) {
         if (!uiState.isLoading && uiState.emailError == null && uiState.passwordError == null && uiState.generalError == null && uiState.email.isNotBlank() && uiState.password.isNotBlank()) {
             onLoggedIn()
+        }
+    }
+
+    LaunchedEffect(uiState.navigateToForgotPassword) {
+        if (uiState.navigateToForgotPassword) {
+            onForgotPassword()
+            viewModel.onEvent(LoginEvent.EmailChanged(uiState.email)) // Reset the flag
         }
     }
 

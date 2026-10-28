@@ -34,32 +34,18 @@ import androidx.compose.ui.unit.sp
 import com.example.myapplication.ui.icons.AppIcons
 import com.example.myapplication.ui.theme.AppTheme
 
-sealed class BottomNavRoute(val route: String) {
-    object Home : BottomNavRoute("home")
-    object Stats : BottomNavRoute("stats")
-    object Add : BottomNavRoute("add")
-    object AI : BottomNavRoute("ai")
-    object Profile : BottomNavRoute("profile")
-}
-
-data class BottomNavItem(
-    val route: BottomNavRoute,
-    val label: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector
-)
-
 @Composable
 fun AppBottomBar(
-    currentRoute: BottomNavRoute,
-    onRouteSelected: (BottomNavRoute) -> Unit,
+    currentRoute: Route,
+    onRouteSelected: (Route) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
-        BottomNavItem(BottomNavRoute.Home, "Home", AppIcons.DeviceIcon),
-        BottomNavItem(BottomNavRoute.Stats, "Stats", AppIcons.SyncIcon),
-        BottomNavItem(BottomNavRoute.Add, "", AppIcons.SparkleIcon),
-        BottomNavItem(BottomNavRoute.AI, "AI", AppIcons.SparkleIcon),
-        BottomNavItem(BottomNavRoute.Profile, "Profile", AppIcons.BellIcon)
+        Route.Dashboard to "Home" to AppIcons.DeviceIcon,
+        Route.Stats to "Stats" to AppIcons.SyncIcon,
+        Route.AI to "" to AppIcons.SparkleIcon,
+        Route.Insights to "Insights" to AppIcons.SparkleIcon,
+        Route.Sync to "Sync" to AppIcons.BellIcon
     )
 
     Surface(
@@ -79,21 +65,21 @@ fun AppBottomBar(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            items.forEach { item ->
-                if (item.route == BottomNavRoute.Add) {
-                    // Center Add button
+            items.forEach { (route, label, icon) ->
+                if (route == Route.AI) {
+                    // Center AI button
                     Box(
                         modifier = Modifier
                             .offset(y = (-28).dp)
                             .size(56.dp)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.primary)
-                            .clickable { onRouteSelected(item.route) }
-                            .semantics { contentDescription = "Add expense" },
+                            .clickable { onRouteSelected(route) }
+                            .semantics { contentDescription = "AI assistant" },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            painter = rememberVectorPainter(item.icon),
+                            painter = rememberVectorPainter(icon),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(28.dp)
@@ -101,26 +87,26 @@ fun AppBottomBar(
                     }
                 } else {
                     // Regular tab
-                    val isSelected = currentRoute == item.route
+                    val isSelected = currentRoute == route
                     Column(
                         modifier = Modifier
                             .padding(vertical = 8.dp, horizontal = 12.dp)
-                            .clickable { onRouteSelected(item.route) }
+                            .clickable { onRouteSelected(route) }
                             .semantics {
-                                contentDescription = "${item.label} tab"
+                                contentDescription = "${label} tab"
                             },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            painter = rememberVectorPainter(item.icon),
+                            painter = rememberVectorPainter(icon),
                             contentDescription = null,
                             tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = item.label,
+                            text = label,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
                         )

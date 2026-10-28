@@ -5,10 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.myapplication.domain.repository.AuthRepository
 import com.example.myapplication.domain.usecase.ValidateEmailUseCase
 import com.example.myapplication.domain.usecase.ValidatePasswordUseCase
+import com.example.myapplication.platform.storage.UserPreferencesStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 data class LoginUiState(
     val email: String = "",
@@ -17,7 +20,8 @@ data class LoginUiState(
     val passwordError: String? = null,
     val isLoading: Boolean = false,
     val isPasswordVisible: Boolean = false,
-    val generalError: String? = null
+    val generalError: String? = null,
+    val navigateToForgotPassword: Boolean = false
 )
 
 sealed class LoginEvent {
@@ -34,7 +38,8 @@ class LoginViewModel(
     private val authRepository: AuthRepository,
     private val validateEmailUseCase: ValidateEmailUseCase,
     private val validatePasswordUseCase: ValidatePasswordUseCase
-) : ViewModel() {
+) : ViewModel(), KoinComponent {
+    private val userPreferencesStorage: UserPreferencesStorage by inject()
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
@@ -70,7 +75,7 @@ class LoginViewModel(
                 // Handled in UI for "Coming soon" snackbar
             }
             is LoginEvent.ForgotPasswordClicked -> {
-                // TODO: Navigate to forgot password screen
+                _uiState.value = _uiState.value.copy(navigateToForgotPassword = true)
             }
         }
     }
@@ -92,6 +97,7 @@ class LoginViewModel(
             
             when (val result = authRepository.signIn(_uiState.value.email, _uiState.value.password)) {
                 is com.example.myapplication.domain.model.AuthResult.Success -> {
+                    userPreferencesStorage.setSignedIn(true)
                     _uiState.value = _uiState.value.copy(isLoading = false)
                     // Navigation handled by observing success state
                 }

@@ -1,0 +1,32 @@
+-- Get all pending sync outbox entries
+selectPendingSyncOutbox:
+SELECT * FROM SyncOutbox
+WHERE isProcessed = 0
+ORDER BY createdAt ASC;
+
+-- Get sync outbox entry by id
+selectSyncOutboxById:
+SELECT * FROM SyncOutbox
+WHERE id = ?;
+
+-- Insert sync outbox entry
+insertSyncOutbox:
+INSERT INTO SyncOutbox(id, tableName, recordId, operation, payload, createdAt, isProcessed, processedAt)
+VALUES(?, ?, ?, ?, ?, ?, ?, ?);
+
+-- Mark sync outbox entry as processed
+markSyncOutboxProcessed:
+UPDATE SyncOutbox
+SET isProcessed = 1, processedAt = ?
+WHERE id = ?;
+
+-- Delete processed sync outbox entries (cleanup)
+deleteProcessedSyncOutbox:
+DELETE FROM SyncOutbox
+WHERE isProcessed = 1 AND processedAt < ?;
+
+-- Get sync outbox entries by table
+selectSyncOutboxByTable:
+SELECT * FROM SyncOutbox
+WHERE tableName = ? AND isProcessed = 0
+ORDER BY createdAt ASC;
