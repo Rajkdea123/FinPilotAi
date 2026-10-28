@@ -60,7 +60,7 @@ ORDER BY date DESC;
 
 -- Get category totals for a month
 selectCategoryTotalsByMonth:
-SELECT category, SUM(amount) as categoryTotal
+SELECT category, SUM(amount)
 FROM Expense
 WHERE isDeleted = 0
 AND strftime('%Y-%m', date/1000, 'unixepoch') = ?
