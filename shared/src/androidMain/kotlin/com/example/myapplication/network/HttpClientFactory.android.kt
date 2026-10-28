@@ -6,6 +6,7 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
+import io.ktor.client.plugins.logging.SIMPLE
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 
@@ -20,7 +21,7 @@ actual class HttpClientFactory {
             }
             install(Logging) {
                 level = LogLevel.INFO
-                logger = Logger.ANDROID
+                logger = Logger.SIMPLE
             }
         }
     }
