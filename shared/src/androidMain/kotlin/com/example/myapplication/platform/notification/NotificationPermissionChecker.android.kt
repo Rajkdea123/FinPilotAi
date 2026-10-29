@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-actual class NotificationPermissionChecker actual constructor() {
+actual class NotificationPermissionChecker {
 
     private val _status = MutableStateFlow<PermissionStatus>(PermissionStatus.NotDetermined)
     private var context: Context? = null
@@ -32,7 +32,7 @@ actual class NotificationPermissionChecker actual constructor() {
         context?.startActivity(intent)
     }
 
-    fun refreshStatus() {
+    actual fun refreshStatus() {
         _status.value = checkPermission()
     }
 
@@ -57,4 +57,8 @@ actual class NotificationPermissionChecker actual constructor() {
             PermissionStatus.Granted // Always granted below API 33
         }
     }
+}
+
+actual fun getNotificationPermissionChecker(): NotificationPermissionChecker {
+    return NotificationPermissionChecker()
 }
