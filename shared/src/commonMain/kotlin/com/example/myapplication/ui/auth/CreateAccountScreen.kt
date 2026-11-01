@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -61,7 +62,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
 import com.example.myapplication.domain.model.PasswordStrength
 import com.example.myapplication.ui.icons.AppIcons
 import com.example.myapplication.ui.theme.AppTheme
@@ -71,21 +72,13 @@ import com.example.myapplication.ui.theme.ThemeMode
 fun CreateAccountScreen(
     onSignUpSuccess: () -> Unit,
     onBackToLogin: () -> Unit,
-    viewModel: SignUpViewModel = viewModel()
+    viewModel: SignUpViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
 
-    LaunchedEffect(uiState.isLoading) {
-        if (!uiState.isLoading && 
-            uiState.nameError == null && 
-            uiState.emailError == null && 
-            uiState.passwordError == null && 
-            uiState.confirmPasswordError == null && 
-            uiState.generalError == null &&
-            uiState.name.isNotBlank() &&
-            uiState.email.isNotBlank() &&
-            uiState.password.isNotBlank()) {
+    LaunchedEffect(uiState.isSignedUp) {
+        if (uiState.isSignedUp) {
             onSignUpSuccess()
         }
     }
@@ -257,7 +250,7 @@ fun CreateAccountScreen(
                         )
                     ) {
                         append("Privacy Policy")
-                    )
+                    }
                 }
 
                 Text(

@@ -1,23 +1,21 @@
 package com.example.myapplication.db
 
-import app.cash.sqldelight.db.SqlDriver
-import com.example.myapplication.di.AppCoroutineDispatchers
+import com.example.myapplication.di.core.AppCoroutineDispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 
 class DatabaseManager(
-    private val driverFactory: DatabaseDriverFactory,
+    private val databaseDriverFactory: DatabaseDriverFactory,
     private val dispatchers: AppCoroutineDispatchers,
     private val clock: Clock
 ) {
-    private var driver: SqlDriver? = null
     private var database: FinPilotDatabase? = null
     private var seeded = false
 
     suspend fun getDatabase(): FinPilotDatabase = withContext(dispatchers.io) {
         if (database == null) {
-            driver = driverFactory.createDriver()
-            database = FinPilotDatabase(driver!!)
+            val driver = databaseDriverFactory.createDriver()
+            database = FinPilotDatabase(driver)
             
             // Seed database in debug builds
             if (!seeded) {
@@ -30,20 +28,19 @@ class DatabaseManager(
 
     suspend fun close() = withContext(dispatchers.io) {
         database = null
-        driver?.close()
-        driver = null
         seeded = false
     }
 
     suspend fun clearDatabase() = withContext(dispatchers.io) {
-        database?.finPilotDatabaseQueries?.transaction {
-            finPilotDatabaseQueries.deleteAllExpenses()
-            finPilotDatabaseQueries.deleteAllBudgets()
-            finPilotDatabaseQueries.deleteAllInsights()
-            finPilotDatabaseQueries.deleteAllSubscriptions()
-            finPilotDatabaseQueries.deleteAllChatMessages()
-            finPilotDatabaseQueries.deleteAllUserProfiles()
-            finPilotDatabaseQueries.deleteAllSyncOutbox()
+        val db = database ?: return@withContext
+        db.transaction {
+            db.expenseQueries.deleteAllExpenses()
+            db.budgetQueries.deleteAllBudgets()
+            db.insightQueries.deleteAllInsights()
+            db.subscriptionQueries.deleteAllSubscriptions()
+            db.chatMessageQueries.deleteAllChatMessages()
+            db.userProfileQueries.deleteAllUserProfiles()
+            db.syncOutboxQueries.deleteAllSyncOutbox()
         }
     }
 }

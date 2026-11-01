@@ -89,7 +89,7 @@ fun AppTextField(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                prefix = if (prefix != null) {
+                leadingIcon = if (prefix != null) {
                     { Text(text = prefix, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 } else null,
                 singleLine = true,

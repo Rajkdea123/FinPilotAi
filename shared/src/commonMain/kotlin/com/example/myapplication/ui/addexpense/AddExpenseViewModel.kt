@@ -16,6 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atTime
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
 sealed class ParseState {
@@ -69,7 +71,9 @@ class AddExpenseViewModel(
 
     init {
         if (expenseId != null) {
-            loadExpense(expenseId)
+            viewModelScope.launch {
+                loadExpense(expenseId)
+            }
         }
     }
 

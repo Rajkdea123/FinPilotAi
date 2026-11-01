@@ -1,3 +1,15 @@
+CREATE TABLE Budget (
+    id TEXT NOT NULL PRIMARY KEY,
+    total INTEGER NOT NULL, -- stored as paise
+    category TEXT NOT NULL,
+    budgetLimit INTEGER NOT NULL, -- stored as paise
+    version INTEGER NOT NULL DEFAULT 1,
+    updatedAt INTEGER NOT NULL,
+    deviceId TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0,
+    syncState TEXT NOT NULL DEFAULT 'SYNCED'
+);
+
 -- Get all budgets (excluding deleted)
 selectAllBudgets:
 SELECT * FROM Budget
@@ -15,13 +27,13 @@ WHERE category = ? AND isDeleted = 0;
 
 -- Insert budget
 insertBudget:
-INSERT INTO Budget(id, total, category, limit, version, updatedAt, deviceId, isDeleted, syncState)
+INSERT INTO Budget(id, total, category, budgetLimit, version, updatedAt, deviceId, isDeleted, syncState)
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Update budget
 updateBudget:
 UPDATE Budget
-SET total = ?, category = ?, limit = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
+SET total = ?, category = ?, budgetLimit = ?, version = version + 1, updatedAt = ?, syncState = 'PENDING'
 WHERE id = ?;
 
 -- Delete budget (soft delete)
@@ -29,6 +41,10 @@ deleteBudget:
 UPDATE Budget
 SET isDeleted = 1, syncState = 'PENDING', updatedAt = ?
 WHERE id = ?;
+
+-- Delete all budgets
+deleteAllBudgets:
+DELETE FROM Budget;
 
 -- Get pending sync budgets
 selectPendingBudgets:

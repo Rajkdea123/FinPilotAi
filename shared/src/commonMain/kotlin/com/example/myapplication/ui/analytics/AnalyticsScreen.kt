@@ -52,7 +52,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
 import com.example.myapplication.data.repository.AnalyticsAggregator
 import com.example.myapplication.domain.model.AnalyticsSummary
 import com.example.myapplication.domain.model.Category
@@ -65,7 +65,7 @@ import com.example.myapplication.util.MoneyFormatter
 
 @Composable
 fun AnalyticsScreen(
-    viewModel: AnalyticsViewModel = viewModel()
+    viewModel: AnalyticsViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

@@ -1,9 +1,13 @@
 package com.example.myapplication.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,6 +20,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.myapplication.domain.model.Category
 import com.example.myapplication.domain.model.Expense
 import com.example.myapplication.ui.icons.AppIcons
@@ -45,10 +50,10 @@ fun ExpenseRow(expense: Expense) {
         ) {
             Surface(
                 modifier = Modifier.size(44.dp),
-                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
-                androidx.compose.foundation.layout.Box(
+                Box(
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -60,7 +65,7 @@ fun ExpenseRow(expense: Expense) {
                 }
             }
 
-            androidx.compose.foundation.layout.Column {
+            Column {
                 Text(
                     text = expense.merchant,
                     color = MaterialTheme.colorScheme.onBackground,

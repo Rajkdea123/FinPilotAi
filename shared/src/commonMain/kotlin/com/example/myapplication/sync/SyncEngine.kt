@@ -1,11 +1,22 @@
 package com.example.myapplication.sync
 
 import com.example.myapplication.db.DatabaseManager
-import com.example.myapplication.di.AppCoroutineDispatchers
+import com.example.myapplication.db.FinPilotDatabase
+import com.example.myapplication.db.SyncOutbox as DbSyncOutbox
+import com.example.myapplication.di.core.AppCoroutineDispatchers
 import com.example.myapplication.network.api.BudgetApi
 import com.example.myapplication.network.api.ChatApi
 import com.example.myapplication.network.api.ExpenseApi
 import com.example.myapplication.network.api.SubscriptionApi
+import com.example.myapplication.network.dto.CreateBudgetRequest
+import com.example.myapplication.network.dto.CreateChatMessageRequest
+import com.example.myapplication.network.dto.CreateExpenseRequest
+import com.example.myapplication.network.dto.CreateSubscriptionRequest
+import com.example.myapplication.network.dto.DeleteExpenseRequest
+import com.example.myapplication.network.dto.ExpenseDto
+import com.example.myapplication.network.dto.UpdateBudgetRequest
+import com.example.myapplication.network.dto.UpdateExpenseRequest
+import com.example.myapplication.network.dto.UpdateSubscriptionRequest
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
@@ -62,7 +73,7 @@ class SyncEngine(
         }
     }
     
-    private suspend fun syncExpense(entry: com.example.myapplication.db.SyncOutbox, database: com.example.myapplication.db.FinPilotDatabase) {
+    private suspend fun syncExpense(entry: DbSyncOutbox, database: FinPilotDatabase) {
         when (entry.operation) {
             "CREATE" -> {
                 // Parse payload and call API
@@ -90,7 +101,7 @@ class SyncEngine(
                         }
                         ConflictResolution.LAST_WRITE_WINS -> {
                             // Compare timestamps and use latest
-                            if (localExpense.updatedAt > request.version.toLong()) {
+                            if (localExpense.updatedAt > request.version) {
                                 // Client is newer, push to server
                                 expenseApi.updateExpense(request)
                             } else {
@@ -114,7 +125,7 @@ class SyncEngine(
         }
     }
     
-    private fun updateLocalExpenseFromServer(serverExpense: com.example.myapplication.network.dto.ExpenseDto, database: com.example.myapplication.db.FinPilotDatabase) {
+    private fun updateLocalExpenseFromServer(serverExpense: ExpenseDto, database: FinPilotDatabase) {
         database.expenseQueries.updateExpense(
             amount = serverExpense.amountPaise,
             category = serverExpense.category,
@@ -127,7 +138,7 @@ class SyncEngine(
         database.expenseQueries.updateExpenseSyncState("SYNCED", serverExpense.id)
     }
     
-    private suspend fun syncBudget(entry: com.example.myapplication.db.SyncOutbox, database: com.example.myapplication.db.FinPilotDatabase) {
+    private suspend fun syncBudget(entry: DbSyncOutbox, database: FinPilotDatabase) {
         when (entry.operation) {
             "CREATE" -> {
                 budgetApi.createBudget(parseBudgetCreateRequest(entry.payload))
@@ -141,7 +152,7 @@ class SyncEngine(
         }
     }
     
-    private suspend fun syncSubscription(entry: com.example.myapplication.db.SyncOutbox, database: com.example.myapplication.db.FinPilotDatabase) {
+    private suspend fun syncSubscription(entry: DbSyncOutbox, database: FinPilotDatabase) {
         when (entry.operation) {
             "CREATE" -> {
                 subscriptionApi.createSubscription(parseSubscriptionCreateRequest(entry.payload))
@@ -155,7 +166,7 @@ class SyncEngine(
         }
     }
     
-    private suspend fun syncChatMessage(entry: com.example.myapplication.db.SyncOutbox, database: com.example.myapplication.db.FinPilotDatabase) {
+    private suspend fun syncChatMessage(entry: DbSyncOutbox, database: FinPilotDatabase) {
         when (entry.operation) {
             "CREATE" -> {
                 chatApi.createChatMessage(parseChatCreateRequest(entry.payload))
@@ -165,43 +176,43 @@ class SyncEngine(
         }
     }
     
-    private fun markAsProcessed(entryId: String, database: com.example.myapplication.db.FinPilotDatabase) {
+    private fun markAsProcessed(entryId: String, database: FinPilotDatabase) {
         database.syncOutboxQueries.markSyncOutboxProcessed(
             processedAt = clock.now().toEpochMilliseconds(),
             id = entryId
         )
     }
     
-    // Parse functions - these would parse the JSON payload into request objects
-    private fun parseExpenseCreateRequest(payload: String): com.example.myapplication.network.dto.CreateExpenseRequest {
+    // Parse functions
+    private fun parseExpenseCreateRequest(payload: String): CreateExpenseRequest {
         return json.decodeFromString(payload)
     }
     
-    private fun parseExpenseUpdateRequest(payload: String): com.example.myapplication.network.dto.UpdateExpenseRequest {
+    private fun parseExpenseUpdateRequest(payload: String): UpdateExpenseRequest {
         return json.decodeFromString(payload)
     }
     
-    private fun parseExpenseDeleteRequest(payload: String): com.example.myapplication.network.dto.DeleteExpenseRequest {
+    private fun parseExpenseDeleteRequest(payload: String): DeleteExpenseRequest {
         return json.decodeFromString(payload)
     }
     
-    private fun parseBudgetCreateRequest(payload: String): com.example.myapplication.network.dto.CreateBudgetRequest {
+    private fun parseBudgetCreateRequest(payload: String): CreateBudgetRequest {
         return json.decodeFromString(payload)
     }
     
-    private fun parseBudgetUpdateRequest(payload: String): com.example.myapplication.network.dto.UpdateBudgetRequest {
+    private fun parseBudgetUpdateRequest(payload: String): UpdateBudgetRequest {
         return json.decodeFromString(payload)
     }
     
-    private fun parseSubscriptionCreateRequest(payload: String): com.example.myapplication.network.dto.CreateSubscriptionRequest {
+    private fun parseSubscriptionCreateRequest(payload: String): CreateSubscriptionRequest {
         return json.decodeFromString(payload)
     }
     
-    private fun parseSubscriptionUpdateRequest(payload: String): com.example.myapplication.network.dto.UpdateSubscriptionRequest {
+    private fun parseSubscriptionUpdateRequest(payload: String): UpdateSubscriptionRequest {
         return json.decodeFromString(payload)
     }
     
-    private fun parseChatCreateRequest(payload: String): com.example.myapplication.network.dto.CreateChatMessageRequest {
+    private fun parseChatCreateRequest(payload: String): CreateChatMessageRequest {
         return json.decodeFromString(payload)
     }
 }

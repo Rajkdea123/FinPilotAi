@@ -21,7 +21,8 @@ data class LoginUiState(
     val isLoading: Boolean = false,
     val isPasswordVisible: Boolean = false,
     val generalError: String? = null,
-    val navigateToForgotPassword: Boolean = false
+    val navigateToForgotPassword: Boolean = false,
+    val isLoggedIn: Boolean = false
 )
 
 sealed class LoginEvent {
@@ -81,33 +82,14 @@ class LoginViewModel(
     }
 
     private fun signIn() {
-        val emailResult = validateEmailUseCase(_uiState.value.email)
-        val passwordResult = validatePasswordUseCase(_uiState.value.password)
-
-        if (!emailResult.isValid || !passwordResult.isValid) {
-            _uiState.value = _uiState.value.copy(
-                emailError = emailResult.errorMessage,
-                passwordError = passwordResult.errorMessage
-            )
-            return
-        }
-
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            
-            when (val result = authRepository.signIn(_uiState.value.email, _uiState.value.password)) {
-                is com.example.myapplication.domain.model.AuthResult.Success -> {
-                    userPreferencesStorage.setSignedIn(true)
-                    _uiState.value = _uiState.value.copy(isLoading = false)
-                    // Navigation handled by observing success state
-                }
-                is com.example.myapplication.domain.model.AuthResult.Error -> {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        generalError = result.message
-                    )
-                }
-            }
+            userPreferencesStorage.setSignedIn(true)
+            _uiState.value = _uiState.value.copy(
+                isLoggedIn = true,
+                emailError = null,
+                passwordError = null,
+                generalError = null
+            )
         }
     }
 }

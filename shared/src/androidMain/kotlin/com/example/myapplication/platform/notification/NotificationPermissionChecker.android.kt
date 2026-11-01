@@ -32,7 +32,7 @@ actual class NotificationPermissionChecker actual constructor() {
         context?.startActivity(intent)
     }
 
-    fun refreshStatus() {
+    actual fun refreshStatus() {
         _status.value = checkPermission()
     }
 
@@ -57,4 +57,8 @@ actual class NotificationPermissionChecker actual constructor() {
             PermissionStatus.Granted // Always granted below API 33
         }
     }
+}
+
+actual fun getNotificationPermissionChecker(): NotificationPermissionChecker {
+    return NotificationPermissionChecker()
 }

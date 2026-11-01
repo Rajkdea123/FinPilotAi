@@ -7,7 +7,7 @@ import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-actual class SecureTokenStorage {
+actual class SecureTokenStorage actual constructor() : TokenStorage {
     private lateinit var sharedPreferences: SharedPreferences
 
     fun init(context: Context) {
@@ -24,35 +24,33 @@ actual class SecureTokenStorage {
         )
     }
 
-    actual constructor()
-
     private fun ensureInitialized() {
         if (!::sharedPreferences.isInitialized) {
             throw IllegalStateException("SecureTokenStorage not initialized. Call init(context) first.")
         }
     }
 
-    override suspend fun saveAccessToken(token: String) = withContext(Dispatchers.IO) {
+    actual override suspend fun saveAccessToken(token: String): Unit = withContext(Dispatchers.IO) {
         ensureInitialized()
         sharedPreferences.edit().putString("access_token", token).apply()
     }
 
-    override suspend fun getAccessToken(): String? = withContext(Dispatchers.IO) {
+    actual override suspend fun getAccessToken(): String? = withContext(Dispatchers.IO) {
         ensureInitialized()
         sharedPreferences.getString("access_token", null)
     }
 
-    override suspend fun saveRefreshToken(token: String) = withContext(Dispatchers.IO) {
+    actual override suspend fun saveRefreshToken(token: String): Unit = withContext(Dispatchers.IO) {
         ensureInitialized()
         sharedPreferences.edit().putString("refresh_token", token).apply()
     }
 
-    override suspend fun getRefreshToken(): String? = withContext(Dispatchers.IO) {
+    actual override suspend fun getRefreshToken(): String? = withContext(Dispatchers.IO) {
         ensureInitialized()
         sharedPreferences.getString("refresh_token", null)
     }
 
-    override suspend fun clearTokens() = withContext(Dispatchers.IO) {
+    actual override suspend fun clearTokens(): Unit = withContext(Dispatchers.IO) {
         ensureInitialized()
         sharedPreferences.edit().clear().apply()
     }

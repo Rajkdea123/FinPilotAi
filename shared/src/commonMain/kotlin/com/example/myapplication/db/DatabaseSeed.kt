@@ -1,12 +1,11 @@
 package com.example.myapplication.db
 
-import com.example.myapplication.di.AppCoroutineDispatchers
+import com.example.myapplication.db.isDebugBuild
+import com.example.myapplication.di.core.AppCoroutineDispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
-
-expect val isDebugBuild: Boolean
 
 suspend fun seedDatabase(database: FinPilotDatabase, dispatchers: AppCoroutineDispatchers, clock: Clock) {
     if (!isDebugBuild) return
@@ -14,8 +13,8 @@ suspend fun seedDatabase(database: FinPilotDatabase, dispatchers: AppCoroutineDi
     withContext(dispatchers.io) {
         database.transaction {
             // Check if already seeded
-            val existingExpenses = database.expenseQueries.selectAllExpenses().executeAsOneOrNull()
-            if (existingExpenses != null) return@transaction
+            val existingExpenses = database.expenseQueries.selectAllExpenses().executeAsList()
+            if (existingExpenses.isNotEmpty()) return@transaction
 
             // Seed sample expenses
             @OptIn(ExperimentalUuidApi::class)
@@ -23,7 +22,7 @@ suspend fun seedDatabase(database: FinPilotDatabase, dispatchers: AppCoroutineDi
                 val id = Uuid.random().toString()
                 database.expenseQueries.insertExpense(
                     id = id,
-                    amount = (1000 + index * 500) * 100, // Amount in paise
+                    amount = (1000 + index * 500) * 100L, // Amount in paise
                     category = listOf("Food", "Shopping", "Transport", "Bills", "Entertainment")[index % 5],
                     paymentMethod = listOf("UPI", "Card", "Cash")[index % 3],
                     date = clock.now().toEpochMilliseconds() - (index * 86400000L), // Past days
@@ -43,7 +42,7 @@ suspend fun seedDatabase(database: FinPilotDatabase, dispatchers: AppCoroutineDi
                 id = budgetId,
                 total = 500000L, // 5000 rupees
                 category = "TOTAL",
-                limit = 500000L,
+                budgetLimit = 500000L,
                 version = 1,
                 updatedAt = clock.now().toEpochMilliseconds(),
                 deviceId = "device-1",
@@ -58,7 +57,7 @@ suspend fun seedDatabase(database: FinPilotDatabase, dispatchers: AppCoroutineDi
                 database.subscriptionQueries.insertSubscription(
                     id = subId,
                     name = listOf("Netflix", "Spotify", "Amazon Prime")[index],
-                    amount = (500 + index * 200) * 100,
+                    amount = (500 + index * 200) * 100L,
                     category = "Entertainment",
                     billingCycle = "MONTHLY",
                     nextBillingDate = clock.now().toEpochMilliseconds() + (30 * 86400000L),

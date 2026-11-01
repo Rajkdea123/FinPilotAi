@@ -8,7 +8,7 @@ sealed class BiometricResult {
     data class Error(val message: String) : BiometricResult()
 }
 
-expect class BiometricAuthenticator {
+expect class BiometricAuthenticator() {
     suspend fun authenticate(): BiometricResult
     val isAvailable: Flow<Boolean>
 }

@@ -1,3 +1,21 @@
+CREATE TABLE Expense (
+    id TEXT NOT NULL PRIMARY KEY,
+    amount INTEGER NOT NULL, -- stored as paise (Long)
+    category TEXT NOT NULL,
+    paymentMethod TEXT NOT NULL,
+    date INTEGER NOT NULL, -- timestamp in milliseconds
+    description TEXT NOT NULL,
+    version INTEGER NOT NULL DEFAULT 1,
+    updatedAt INTEGER NOT NULL, -- timestamp in milliseconds
+    deviceId TEXT NOT NULL,
+    isDeleted INTEGER NOT NULL DEFAULT 0, -- 0 = false, 1 = true (tombstone)
+    syncState TEXT NOT NULL DEFAULT 'SYNCED' -- SYNCED, PENDING, CONFLICT
+);
+
+CREATE INDEX idx_expense_date ON Expense(date DESC);
+CREATE INDEX idx_expense_category ON Expense(category);
+CREATE INDEX idx_expense_sync ON Expense(syncState, isDeleted);
+
 -- Get all expenses (excluding deleted)
 selectAllExpenses:
 SELECT * FROM Expense
@@ -60,7 +78,7 @@ ORDER BY date DESC;
 
 -- Get category totals for a month
 selectCategoryTotalsByMonth:
-SELECT category, SUM(amount) as total
+SELECT category, SUM(amount)
 FROM Expense
 WHERE isDeleted = 0
 AND strftime('%Y-%m', date/1000, 'unixepoch') = ?
@@ -68,9 +86,9 @@ GROUP BY category;
 
 -- Get month summary (total spent, by category)
 selectMonthSummary:
-SELECT 
-    SUM(amount) as totalSpent,
-    COUNT(*) as transactionCount
+SELECT
+    SUM(amount) AS totalSpent,
+    COUNT(*) AS transactionCount
 FROM Expense
 WHERE isDeleted = 0
 AND strftime('%Y-%m', date/1000, 'unixepoch') = ?;
@@ -99,3 +117,7 @@ updateExpenseSyncState:
 UPDATE Expense
 SET syncState = ?
 WHERE id = ?;
+
+-- Delete all expenses
+deleteAllExpenses:
+DELETE FROM Expense;

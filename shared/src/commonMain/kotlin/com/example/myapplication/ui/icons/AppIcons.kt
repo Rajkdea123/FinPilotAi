@@ -181,7 +181,6 @@ object AppIcons {
                 arcToRelative(1f, 1f, 0f, false, false, 0f, -2f)
             }
         }.build()
-}
 
     val SearchIcon: ImageVector
         get() = ImageVector.Builder(
@@ -201,8 +200,8 @@ object AppIcons {
                 pathFillType = PathFillType.NonZero
             ) {
                 moveTo(11f, 4f)
-                arcTo(7f, 7f, 0f, 1, 0, 0f, 14f)
-                arcTo(7f, 7f, 0f, 0, 0, 0f, -14f)
+                arcTo(7f, 7f, 0f, true, false, 0f, 14f)
+                arcTo(7f, 7f, 0f, false, false, 0f, -14f)
                 close()
             }
             path(
@@ -297,3 +296,4 @@ object AppIcons {
                 verticalLineTo(7f)
             }
         }.build()
+}

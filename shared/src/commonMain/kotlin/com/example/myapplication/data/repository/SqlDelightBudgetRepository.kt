@@ -4,8 +4,9 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.example.myapplication.db.DatabaseManager
 import com.example.myapplication.db.FinPilotDatabase
-import com.example.myapplication.di.AppCoroutineDispatchers
-import com.example.myapplication.domain.model.Budget
+import com.example.myapplication.db.Budget as DbBudget
+import com.example.myapplication.di.core.AppCoroutineDispatchers
+import com.example.myapplication.domain.model.Budget as DomainBudget
 import com.example.myapplication.domain.model.Category
 import com.example.myapplication.domain.repository.BudgetRepository
 import kotlinx.coroutines.flow.Flow
@@ -23,29 +24,31 @@ class SqlDelightBudgetRepository(
 
     private suspend fun getQueries(): FinPilotDatabase = databaseManager.getDatabase()
 
-    override fun observeBudget(): Flow<Budget> {
+    override fun observeBudget(): Flow<DomainBudget> {
         return kotlinx.coroutines.flow.flow {
             val queries = getQueries()
             queries.budgetQueries.selectAllBudgets()
                 .asFlow()
                 .mapToList(dispatchers.io)
-                .map { entities ->
-                    val total = entities.firstOrNull()?.total ?: 0L
-                    val byCategory = entities.associate { 
-                        Category.valueOf(it.category) to it.limit 
+                .map { entities: List<DbBudget> ->
+                    val total = entities.firstOrNull { it.category == "TOTAL" }?.total ?: 0L
+                    val byCategory = entities.filter { it.category != "TOTAL" }.associate { entity ->
+                        val cat = runCatching { Category.valueOf(entity.category) }.getOrDefault(Category.Food)
+                        cat to entity.budgetLimit
                     }
-                    Budget(total, byCategory)
+                    DomainBudget(total, byCategory)
                 }
                 .collect { emit(it) }
         }
     }
 
-    override suspend fun save(budget: Budget): Result<Unit> = withContext(dispatchers.io) {
+    override suspend fun save(budget: DomainBudget): Result<Unit> = withContext(dispatchers.io) {
         try {
-            getQueries().transaction {
+            val db = getQueries()
+            db.transaction {
                 // Delete existing budget entries
-                getQueries().budgetQueries.selectAllBudgets().executeAsList().forEach { existing ->
-                    getQueries().budgetQueries.deleteBudget(
+                db.budgetQueries.selectAllBudgets().executeAsList().forEach { existing ->
+                    db.budgetQueries.deleteBudget(
                         updatedAt = clock.now().toEpochMilliseconds(),
                         id = existing.id
                     )
@@ -54,11 +57,11 @@ class SqlDelightBudgetRepository(
                 // Insert total budget entry
                 @OptIn(ExperimentalUuidApi::class)
                 val totalId = Uuid.random().toString()
-                getQueries().budgetQueries.insertBudget(
+                db.budgetQueries.insertBudget(
                     id = totalId,
                     total = budget.totalPaise,
                     category = "TOTAL",
-                    limit = budget.totalPaise,
+                    budgetLimit = budget.totalPaise,
                     version = 1,
                     updatedAt = clock.now().toEpochMilliseconds(),
                     deviceId = "device-1",
@@ -70,11 +73,11 @@ class SqlDelightBudgetRepository(
                 budget.byCategory.forEach { (category, limit) ->
                     @OptIn(ExperimentalUuidApi::class)
                     val categoryId = Uuid.random().toString()
-                    getQueries().budgetQueries.insertBudget(
+                    db.budgetQueries.insertBudget(
                         id = categoryId,
                         total = budget.totalPaise,
                         category = category.name,
-                        limit = limit,
+                        budgetLimit = limit,
                         version = 1,
                         updatedAt = clock.now().toEpochMilliseconds(),
                         deviceId = "device-1",
@@ -84,7 +87,7 @@ class SqlDelightBudgetRepository(
                 }
 
                 // Add sync outbox entries
-                addSyncOutboxEntry("Budget", totalId, "CREATE", budget)
+                addSyncOutboxEntry(db, "Budget", totalId, "CREATE", budget)
             }
             Result.success(Unit)
         } catch (e: Exception) {
@@ -98,15 +101,15 @@ class SqlDelightBudgetRepository(
         500000L // 5000 rupees in paise
     }
 
-    private fun addSyncOutboxEntry(tableName: String, recordId: String, operation: String, payload: Any) {
+    private fun addSyncOutboxEntry(db: FinPilotDatabase, tableName: String, recordId: String, operation: String, payload: Any) {
         @OptIn(ExperimentalUuidApi::class)
         val id = Uuid.random().toString()
         val payloadJson = when (payload) {
-            is Budget -> """{"total":${payload.totalPaise},"categories":${payload.byCategory.mapKeys { it.key.name }}}"""
+            is DomainBudget -> """{"total":${payload.totalPaise},"categories":${payload.byCategory.mapKeys { it.key.name }}}"""
             else -> """{"id":"$recordId"}"""
         }
         
-        getQueries().syncOutboxQueries.insertSyncOutbox(
+        db.syncOutboxQueries.insertSyncOutbox(
             id = id,
             tableName = tableName,
             recordId = recordId,

@@ -57,7 +57,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
 import com.example.myapplication.ui.icons.AppIcons
 import com.example.myapplication.ui.theme.AppTheme
 import com.example.myapplication.ui.theme.ThemeMode
@@ -68,14 +68,14 @@ fun LoginScreen(
     onLoggedIn: () -> Unit,
     onCreateAccount: () -> Unit,
     onForgotPassword: () -> Unit = {},
-    viewModel: LoginViewModel = viewModel()
+    viewModel: LoginViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
     var showSnackbar by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(uiState.isLoading) {
-        if (!uiState.isLoading && uiState.emailError == null && uiState.passwordError == null && uiState.generalError == null && uiState.email.isNotBlank() && uiState.password.isNotBlank()) {
+    LaunchedEffect(uiState.isLoggedIn) {
+        if (uiState.isLoggedIn) {
             onLoggedIn()
         }
     }

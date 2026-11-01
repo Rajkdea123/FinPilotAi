@@ -22,7 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -151,7 +151,6 @@ private fun ProfileHeader() {
         Text(
             text = "Profile",
             style = MaterialTheme.typography.headlineSmall.copy(
-                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp
             ),
@@ -188,7 +187,6 @@ private fun ProfileContent(
     Text(
         text = "Account",
         style = MaterialTheme.typography.titleMedium.copy(
-            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
             fontWeight = FontWeight.Bold,
             fontSize = 18.sp
         ),
@@ -270,7 +268,6 @@ private fun ProfileCard(
                         Text(
                             text = profile.name.first().toString(),
                             style = MaterialTheme.typography.headlineSmall.copy(
-                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 26.sp
                             ),
@@ -280,7 +277,6 @@ private fun ProfileCard(
                         Text(
                             text = profile.name.first().toString(),
                             style = MaterialTheme.typography.headlineSmall.copy(
-                                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 26.sp
                             ),
@@ -296,7 +292,6 @@ private fun ProfileCard(
                     Text(
                         text = profile.name,
                         style = MaterialTheme.typography.titleMedium.copy(
-                            fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                             fontWeight = FontWeight.Bold,
                             fontSize = 20.sp
                         ),
@@ -344,7 +339,7 @@ private fun ProfileCard(
             Spacer(modifier = Modifier.height(18.dp))
 
             // Divider
-            HorizontalDivider(
+            Divider(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
@@ -387,7 +382,6 @@ private fun StatColumn(
         Text(
             text = value,
             style = MaterialTheme.typography.headlineSmall.copy(
-                fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp
             ),

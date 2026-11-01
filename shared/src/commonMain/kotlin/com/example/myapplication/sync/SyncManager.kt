@@ -1,6 +1,6 @@
 package com.example.myapplication.sync
 
-import com.example.myapplication.di.AppCoroutineDispatchers
+import com.example.myapplication.di.core.AppCoroutineDispatchers
 import com.example.myapplication.platform.network.NetworkMonitor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob

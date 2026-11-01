@@ -2,7 +2,6 @@ package com.example.myapplication.ui.splash
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -37,13 +37,11 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
 import com.example.myapplication.ui.theme.AppTheme
 import com.example.myapplication.ui.theme.ThemeMode
 import kotlinx.coroutines.delay
@@ -51,7 +49,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun SplashScreen(
     onFinished: () -> Unit,
-    viewModel: SplashViewModel = viewModel { SplashViewModel() }
+    viewModel: SplashViewModel = koinInject()
 ) {
     val destination by viewModel.destination.collectAsStateWithLifecycle()
 
@@ -159,18 +157,17 @@ fun SplashScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 60.dp, vertical = 64.dp)
-                .fillMaxSize()
+                .fillMaxWidth()
                 .height(4.dp),
             contentAlignment = Alignment.BottomCenter
         ) {
             LinearProgressIndicator(
-                progress = { progress },
+                progress = progress,
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .clip(RoundedCornerShape(2.dp)),
                 color = MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                strokeCap = StrokeCap.Round
+                trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
         }
     }
