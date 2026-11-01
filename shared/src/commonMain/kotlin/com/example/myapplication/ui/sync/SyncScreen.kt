@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.domain.model.AppSettings
+import org.koin.compose.koinInject
 import com.example.myapplication.domain.model.ConflictChoice
 import com.example.myapplication.domain.model.ConflictVersion
 import com.example.myapplication.domain.model.SyncConflict
@@ -65,7 +66,7 @@ import kotlinx.datetime.Clock
 
 @Composable
 fun SyncScreen(
-    viewModel: SyncViewModel = viewModel()
+    viewModel: SyncViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 

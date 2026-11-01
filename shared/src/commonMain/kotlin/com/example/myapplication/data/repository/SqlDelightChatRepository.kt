@@ -4,11 +4,13 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.example.myapplication.db.DatabaseManager
 import com.example.myapplication.db.FinPilotDatabase
-import com.example.myapplication.di.AppCoroutineDispatchers
-import com.example.myapplication.domain.model.ChatMessage
+import com.example.myapplication.db.ChatMessage as DbChatMessage
+import com.example.myapplication.di.core.AppCoroutineDispatchers
+import com.example.myapplication.domain.model.ChatMessage as DomainChatMessage
 import com.example.myapplication.domain.model.MessageRole
 import com.example.myapplication.domain.repository.ChatRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -23,25 +25,26 @@ class SqlDelightChatRepository(
 
     private suspend fun getQueries(): FinPilotDatabase = databaseManager.getDatabase()
 
-    override fun observeMessages(): Flow<List<ChatMessage>> {
+    override fun observeMessages(): Flow<List<DomainChatMessage>> {
         return kotlinx.coroutines.flow.flow {
             val queries = getQueries()
             queries.chatMessageQueries.selectAllChatMessages()
                 .asFlow()
                 .mapToList(dispatchers.io)
-                .map { entities ->
+                .map { entities: List<DbChatMessage> ->
                     entities.map { it.toDomainModel() }
                 }
                 .collect { emit(it) }
         }
     }
 
-    override suspend fun save(message: ChatMessage) = withContext(dispatchers.io) {
-        getQueries().transaction {
+    override suspend fun save(message: DomainChatMessage) = withContext(dispatchers.io) {
+        val db = getQueries()
+        db.transaction {
             @OptIn(ExperimentalUuidApi::class)
-            val id = if (message.id.isEmpty()) Uuid.random().toString() else message.id
+            val id = message.id.ifEmpty { Uuid.random().toString() }
             
-            getQueries().chatMessageQueries.insertChatMessage(
+            db.chatMessageQueries.insertChatMessage(
                 id = id,
                 role = message.role.name,
                 content = message.text,
@@ -54,16 +57,16 @@ class SqlDelightChatRepository(
             )
 
             // Add sync outbox entry
-            addSyncOutboxEntry("ChatMessage", id, "CREATE", message)
+            addSyncOutboxEntry(db, "ChatMessage", id, "CREATE", message)
         }
     }
 
-    private fun addSyncOutboxEntry(tableName: String, recordId: String, operation: String, payload: ChatMessage) {
+    private fun addSyncOutboxEntry(db: FinPilotDatabase, tableName: String, recordId: String, operation: String, payload: DomainChatMessage) {
         @OptIn(ExperimentalUuidApi::class)
         val id = Uuid.random().toString()
         val payloadJson = """{"id":"${payload.id}","role":"${payload.role.name}","content":"${payload.text}","timestamp":${payload.createdAt.toEpochMilliseconds()}}"""
         
-        getQueries().syncOutboxQueries.insertSyncOutbox(
+        db.syncOutboxQueries.insertSyncOutbox(
             id = id,
             tableName = tableName,
             recordId = recordId,
@@ -75,8 +78,8 @@ class SqlDelightChatRepository(
         )
     }
 
-    private fun com.example.myapplication.db.ChatMessage.toDomainModel(): ChatMessage {
-        return ChatMessage(
+    private fun DbChatMessage.toDomainModel(): DomainChatMessage {
+        return DomainChatMessage(
             id = id,
             role = when (role) {
                 "USER" -> MessageRole.User

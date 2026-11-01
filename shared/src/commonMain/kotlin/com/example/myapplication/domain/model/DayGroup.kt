@@ -1,9 +1,10 @@
 package com.example.myapplication.domain.model
 
 import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.daysUntil
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 
 data class DayGroup(
@@ -18,7 +19,7 @@ fun groupByDay(expenses: List<Expense>): List<DayGroup> {
 
     val timeZone = TimeZone.currentSystemDefault()
     val today = Clock.System.now().toLocalDateTime(timeZone).date
-    val yesterday = today.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
+    val yesterday = today.minus(1, DateTimeUnit.DAY)
 
     return expenses
         .groupBy { expense ->

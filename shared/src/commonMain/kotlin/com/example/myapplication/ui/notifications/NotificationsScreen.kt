@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -112,7 +113,6 @@ fun NotificationsContent(
             Text(
                 text = "Alerts",
                 style = MaterialTheme.typography.headlineSmall.copy(
-                    fontFamily = MaterialTheme.typography.headlineSmall.fontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
                 ),
@@ -430,7 +430,7 @@ private fun BudgetThresholdSection(
 }
 
 @Composable
-private fun ThresholdChip(
+private fun RowScope.ThresholdChip(
     percent: Int,
     selected: Boolean,
     onClick: () -> Unit

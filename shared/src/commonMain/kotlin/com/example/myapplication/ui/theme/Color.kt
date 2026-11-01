@@ -60,6 +60,7 @@ private val DarkWarning = Color(0xFFFFB547)
 private val DarkDanger = Color(0xFFFF7A90)
 private val DarkOnDanger = Color(0xFF2B0710)
 private val DarkInfo = Color(0xFF4CC9F0)
+private val DarkSuccess = Color(0xFF34D399)
 
 // Light theme colors
 private val LightBackground = Color(0xFFF4F7FB)
@@ -75,13 +76,15 @@ private val LightWarning = Color(0xFF9A5B00)
 private val LightDanger = Color(0xFFC42F4B)
 private val LightOnDanger = Color(0xFFFFFFFF)
 private val LightInfo = Color(0xFF0A6F96)
+private val LightSuccess = Color(0xFF059669)
 
 data class AppColors(
     val ai: Color,
     val warning: Color,
     val danger: Color,
     val onDanger: Color,
-    val info: Color
+    val info: Color,
+    val success: Color
 )
 
 val darkAppColors = AppColors(
@@ -89,7 +92,8 @@ val darkAppColors = AppColors(
     warning = DarkWarning,
     danger = DarkDanger,
     onDanger = DarkOnDanger,
-    info = DarkInfo
+    info = DarkInfo,
+    success = DarkSuccess
 )
 
 val lightAppColors = AppColors(
@@ -97,5 +101,6 @@ val lightAppColors = AppColors(
     warning = LightWarning,
     danger = LightDanger,
     onDanger = LightOnDanger,
-    info = LightInfo
+    info = LightInfo,
+    success = LightSuccess
 )

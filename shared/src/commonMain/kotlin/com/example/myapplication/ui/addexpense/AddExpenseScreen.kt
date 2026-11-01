@@ -69,12 +69,13 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseScreen(
     onBack: () -> Unit,
     onExpenseAdded: () -> Unit,
     expenseId: String? = null,
-    viewModel: AddExpenseViewModel = viewModel { AddExpenseViewModel(koinInject(), koinInject(), koinInject(), expenseId) }
+    viewModel: AddExpenseViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val showDatePicker = remember { mutableStateOf(false) }
@@ -391,7 +392,7 @@ private fun AmountField(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
-            prefix = { Text("₹") },
+            leadingIcon = { Text("₹") },
             singleLine = true,
             shape = RoundedCornerShape(14.dp),
             isError = error != null,

@@ -9,7 +9,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.myapplication.db.DatabaseDriverFactory
 import com.example.myapplication.di.initKoin
 import com.example.myapplication.platform.storage.SecureTokenStorage
-import org.koin.compose.koinInject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

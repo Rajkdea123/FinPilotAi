@@ -373,7 +373,7 @@ private fun EditTotalDialog(
                     value = textValue,
                     onValueChange = { textValue = it.filter { ch -> ch.isDigit() } },
                     label = { Text("Total budget (₹)") },
-                    prefix = { Text("₹") },
+                    leadingIcon = { Text("₹") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
@@ -425,7 +425,7 @@ private fun EditCategoryDialog(
                         sliderValue = valFloat.coerceIn(0f, maxRupees)
                     },
                     label = { Text("Limit (₹)") },
-                    prefix = { Text("₹") },
+                    leadingIcon = { Text("₹") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )

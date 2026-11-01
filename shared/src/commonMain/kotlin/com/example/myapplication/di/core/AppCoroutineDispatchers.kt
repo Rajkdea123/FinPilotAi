@@ -2,6 +2,7 @@ package com.example.myapplication.di.core
 
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 
 interface AppCoroutineDispatchers {
     val main: CoroutineDispatcher

@@ -28,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,8 +40,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -64,25 +61,17 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(
     onNavigateToInsights: () -> Unit = {},
     onNavigateToTransactions: () -> Unit = {},
-    viewModel: DashboardViewModel = viewModel(),
+    viewModel: DashboardViewModel = koinInject(),
     syncManager: com.example.myapplication.sync.SyncManager = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val syncStatus by syncManager.syncStatus.collectAsStateWithLifecycle()
-    var isRefreshing by remember { mutableStateOf(false) }
 
-    PullToRefreshBox(
-        isRefreshing = isRefreshing,
-        onRefresh = {
-            isRefreshing = true
-            viewModel.onEvent(DashboardEvent.Refresh)
-            isRefreshing = false
-        },
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
@@ -539,7 +528,6 @@ fun DashboardScreenLightPreview() {
 @Composable
 fun DashboardScreenLoadingDarkPreview() {
     AppTheme(themeMode = ThemeMode.Dark) {
-        // Preview would need a loading state - simplified for now
         DashboardScreen()
     }
 }

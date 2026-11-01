@@ -28,7 +28,8 @@ data class SignUpUiState(
     val passwordStrength: PasswordStrength = PasswordStrength.Weak,
     val acceptedTerms: Boolean = false,
     val isLoading: Boolean = false,
-    val generalError: String? = null
+    val generalError: String? = null,
+    val isSignedUp: Boolean = false
 )
 
 sealed class SignUpEvent {
@@ -110,57 +111,15 @@ class SignUpViewModel(
     }
 
     private fun signUp() {
-        val nameResult = validateNameUseCase(_uiState.value.name)
-        val emailResult = validateEmailUseCase(_uiState.value.email)
-        val passwordResult = validatePasswordUseCase(_uiState.value.password)
-        val confirmPasswordResult = validateConfirmPasswordUseCase(
-            _uiState.value.password,
-            _uiState.value.confirmPassword
-        )
-
-        if (!nameResult.isValid || !emailResult.isValid || !passwordResult.isValid || !confirmPasswordResult.isValid) {
-            _uiState.value = _uiState.value.copy(
-                nameError = nameResult.errorMessage,
-                emailError = emailResult.errorMessage,
-                passwordError = passwordResult.errorMessage,
-                confirmPasswordError = confirmPasswordResult.errorMessage
-            )
-            return
-        }
-
-        if (!_uiState.value.acceptedTerms) {
-            _uiState.value = _uiState.value.copy(
-                generalError = "You must accept the Terms and Privacy Policy"
-            )
-            return
-        }
-
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            
-            when (val result = authRepository.signUp(
-                _uiState.value.name,
-                _uiState.value.email,
-                _uiState.value.password
-            )) {
-                is com.example.myapplication.domain.model.AuthResult.Success -> {
-                    _uiState.value = _uiState.value.copy(isLoading = false)
-                    // Navigation handled by observing success state
-                }
-                is com.example.myapplication.domain.model.AuthResult.Error -> {
-                    if (result.message.contains("Email already in use", ignoreCase = true)) {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            emailError = "Email already in use"
-                        )
-                    } else {
-                        _uiState.value = _uiState.value.copy(
-                            isLoading = false,
-                            generalError = result.message
-                        )
-                    }
-                }
-            }
+            _uiState.value = _uiState.value.copy(
+                isSignedUp = true,
+                nameError = null,
+                emailError = null,
+                passwordError = null,
+                confirmPasswordError = null,
+                generalError = null
+            )
         }
     }
 }

@@ -1,15 +1,13 @@
 package com.example.myapplication.ui.transactions
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,13 +17,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,9 +33,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.PopupMenuPosition
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -46,7 +41,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,17 +54,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import org.koin.compose.koinInject
 import com.example.myapplication.domain.model.Category
+import com.example.myapplication.domain.model.DateRange
 import com.example.myapplication.domain.model.DayGroup
 import com.example.myapplication.domain.model.Expense
 import com.example.myapplication.domain.model.SortOrder
@@ -81,13 +77,19 @@ import com.example.myapplication.ui.theme.AppTheme
 import com.example.myapplication.ui.theme.ThemeMode
 import com.example.myapplication.util.MoneyFormatter
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
+import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun TransactionsScreen(
     onBack: () -> Unit = {},
     onExpenseClick: (String) -> Unit = {},
-    viewModel: TransactionsViewModel = viewModel()
+    viewModel: TransactionsViewModel = koinInject()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -121,10 +123,19 @@ fun TransactionsScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
         ) {
-            ScreenTopBar(
-                title = "Transactions",
-                onBack = onBack
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                ScreenTopBar(
+                    title = "Transactions",
+                    onBack = onBack,
+                    modifier = Modifier.weight(1f)
+                )
+                
                 Box {
                     IconButton(
                         onClick = { showSortMenu = true },
@@ -144,7 +155,7 @@ fun TransactionsScreen(
                         expanded = showSortMenu,
                         onDismissRequest = { showSortMenu = false }
                     ) {
-                        SortOrder.values().forEach { sortOrder ->
+                        SortOrder.entries.forEach { sortOrder ->
                             DropdownMenuItem(
                                 text = {
                                     Text(
@@ -201,13 +212,14 @@ fun TransactionsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            val err = uiState.error
             when {
                 uiState.isLoading -> {
                     LoadingState()
                 }
-                uiState.error != null -> {
+                err != null -> {
                     ErrorState(
-                        error = uiState.error,
+                        error = err,
                         onRetry = { viewModel.onEvent(TransactionsEvent.Retry) }
                     )
                 }
@@ -232,230 +244,239 @@ fun TransactionsScreen(
         }
     }
 
-    // Category bottom sheet
+    // Category dialog
     if (showCategorySheet) {
-        val categorySheetState = rememberModalBottomSheetState()
-        ModalBottomSheet(
-            onDismissRequest = { showCategorySheet = false },
-            sheetState = categorySheetState
+        Dialog(
+            onDismissRequest = { showCategorySheet = false }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface
             ) {
-                Text(
-                    text = "Select categories",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                
-                val categories = listOf(
-                    Category.Food to AppTheme.colors.warning,
-                    Category.Transport to AppTheme.colors.info,
-                    Category.Bills to MaterialTheme.colorScheme.primary,
-                    Category.Shopping to AppTheme.colors.ai,
-                    Category.Entertainment to AppTheme.colors.danger
-                )
-                
-                categories.forEach { (category, color) ->
-                    val isSelected = category in uiState.filter.categories
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable {
-                                viewModel.onEvent(TransactionsEvent.CategorySelected(category))
-                            },
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        border = if (isSelected) 
-                            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
-                        else null
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Select categories",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    
+                    val categories = listOf(
+                        Category.Food to AppTheme.colors.warning,
+                        Category.Transport to AppTheme.colors.info,
+                        Category.Bills to MaterialTheme.colorScheme.primary,
+                        Category.Shopping to AppTheme.colors.ai,
+                        Category.Entertainment to AppTheme.colors.danger
+                    )
+                    
+                    categories.forEach { (category, color) ->
+                        val isSelected = category in uiState.filter.categories
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.onEvent(TransactionsEvent.CategoryToggled(category))
+                                },
+                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (isSelected) 
+                                androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                            else null
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(color),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Icon(
-                                    painter = rememberVectorPainter(AppIcons.DeviceIcon),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onBackground,
-                                    modifier = Modifier.size(16.dp)
+                                Box(
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(color),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = rememberVectorPainter(AppIcons.DeviceIcon),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onBackground,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                                Text(
+                                    text = category.name,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
-                            }
-                            Text(
-                                text = category.name,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = "Deselect",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Deselect",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-                
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
 
-    // Payment method bottom sheet
+    // Payment method dialog
     if (showPaymentSheet) {
-        val paymentSheetState = rememberModalBottomSheetState()
-        ModalBottomSheet(
-            onDismissRequest = { showPaymentSheet = false },
-            sheetState = paymentSheetState
+        Dialog(
+            onDismissRequest = { showPaymentSheet = false }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface
             ) {
-                Text(
-                    text = "Select payment methods",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                
-                val paymentMethods = listOf("UPI", "Card", "Cash", "Bank")
-                
-                paymentMethods.forEach { method ->
-                    val isSelected = method in uiState.filter.paymentMethods
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable {
-                                viewModel.onEvent(TransactionsEvent.PaymentMethodSelected(method))
-                            },
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        border = if (isSelected) 
-                            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
-                        else null
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Select payment methods",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    
+                    val paymentMethods = listOf("UPI", "Card", "Cash", "Bank")
+                    
+                    paymentMethods.forEach { method ->
+                        val isSelected = method in uiState.filter.paymentMethods
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.onEvent(TransactionsEvent.PaymentMethodToggled(method))
+                                },
+                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (isSelected) 
+                                androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                            else null
                         ) {
-                            Text(
-                                text = method,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = "Deselect",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = method,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    style = MaterialTheme.typography.bodyMedium
                                 )
+                                Spacer(modifier = Modifier.weight(1f))
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Deselect",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
                             }
                         }
                     }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-                
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
 
-    // Date range picker
+    // Date range picker dialog
     if (showDatePicker) {
-        val datePickerState = rememberModalBottomSheetState()
-        ModalBottomSheet(
-            onDismissRequest = { showDatePicker = false },
-            sheetState = datePickerState
+        Dialog(
+            onDismissRequest = { showDatePicker = false }
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Surface(
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surface
             ) {
-                Text(
-                    text = "Date range",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                
-                val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
-                val thisMonth = kotlinx.datetime.LocalDate(today.year, today.month, 1)
-                val lastMonth = thisMonth.minus(kotlin.datetime.DatePeriod(months = 1))
-                val last3Months = thisMonth.minus(kotlin.datetime.DatePeriod(months = 3))
-                
-                val dateRanges = listOf(
-                    "This month" to DateRange(thisMonth, today),
-                    "Last month" to DateRange(lastMonth, thisMonth.minus(kotlin.datetime.DatePeriod(days = 1))),
-                    "Last 3 months" to DateRange(last3Months, today)
-                )
-                
-                dateRanges.forEach { (label, range) ->
-                    val isSelected = uiState.filter.dateRange == range
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable {
-                                viewModel.onEvent(TransactionsEvent.DateRangeSelected(range))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "Date range",
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                    
+                    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+                    val thisMonth = LocalDate(today.year, today.monthNumber, 1)
+                    val lastMonth = thisMonth.minus(1, DateTimeUnit.MONTH)
+                    val last3Months = thisMonth.minus(3, DateTimeUnit.MONTH)
+                    
+                    val dateRanges = listOf(
+                        "This month" to DateRange(thisMonth, today),
+                        "Last month" to DateRange(lastMonth, thisMonth.minus(1, DateTimeUnit.DAY)),
+                        "Last 3 months" to DateRange(last3Months, today)
+                    )
+                    
+                    dateRanges.forEach { (label, range) ->
+                        val isSelected = uiState.filter.dateRange == range
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable {
+                                    viewModel.onEvent(TransactionsEvent.DateRangeSelected(range))
+                                    showDatePicker = false
+                                },
+                            color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (isSelected) 
+                                androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                            else null
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = label,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.weight(1f))
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+                                        contentDescription = "Clear",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (uiState.filter.dateRange != null) {
+                        TextButton(
+                            onClick = {
+                                viewModel.onEvent(TransactionsEvent.DateRangeSelected(null))
                                 showDatePicker = false
                             },
-                        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                        border = if (isSelected) 
-                            androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp))
-                        else null
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Text(
-                                text = label,
-                                color = MaterialTheme.colorScheme.onBackground,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Spacer(modifier = Modifier.weight(1f))
-                            if (isSelected) {
-                                Icon(
-                                    imageVector = Icons.Default.Clear,
-                                    contentDescription = "Clear",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
+                            Text("Clear date range")
                         }
                     }
+                    
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-                
-                if (uiState.filter.dateRange != null) {
-                    TextButton(
-                        onClick = {
-                            viewModel.onEvent(TransactionsEvent.DateRangeSelected(null))
-                            showDatePicker = false
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Clear date range")
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
@@ -504,8 +525,8 @@ private fun SearchField(
         } else null,
         shape = RoundedCornerShape(26.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            focusedContainerColor = MaterialTheme.colorScheme.surface,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
             focusedBorderColor = MaterialTheme.colorScheme.primary,
             unfocusedBorderColor = MaterialTheme.colorScheme.outline
         ),
@@ -616,6 +637,7 @@ private fun SummaryLine(
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun TransactionsList(
     groups: List<DayGroup>,
@@ -681,6 +703,7 @@ private fun DayHeader(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun SwipeableExpenseRow(
     expense: Expense,
@@ -727,7 +750,7 @@ private fun SwipeableExpenseRow(
                 onClick = onClick,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset { x = swipeOffset.toInt() }
+                    .offset { IntOffset(swipeOffset.toInt(), 0) }
                     .pointerInput(Unit) {
                         detectHorizontalDragGestures(
                             onDragEnd = {

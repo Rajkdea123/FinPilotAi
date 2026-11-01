@@ -4,11 +4,12 @@ import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
 import com.example.myapplication.db.DatabaseManager
 import com.example.myapplication.db.FinPilotDatabase
-import com.example.myapplication.di.AppCoroutineDispatchers
+import com.example.myapplication.db.Expense as DbExpense
+import com.example.myapplication.di.core.AppCoroutineDispatchers
 import com.example.myapplication.domain.model.AnalyticsSummary
 import com.example.myapplication.domain.model.Category
-import com.example.myapplication.domain.model.DateRange
-import com.example.myapplication.domain.model.Expense
+import com.example.myapplication.domain.model.CategorySpend
+import com.example.myapplication.domain.model.Expense as DomainExpense
 import com.example.myapplication.domain.model.MonthSummary
 import com.example.myapplication.domain.model.Period
 import com.example.myapplication.domain.model.SortOrder
@@ -20,6 +21,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -32,15 +34,15 @@ class SqlDelightExpenseRepository(
 
     private suspend fun getQueries(): FinPilotDatabase = databaseManager.getDatabase()
 
-    override fun observeRecent(limit: Int): Flow<List<Expense>> {
-        // For now, use observeAll with a date filter for recent
-        return observeAll(TransactionFilter(), SortOrder.DATE_DESC)
+    override fun observeRecent(limit: Int): Flow<List<DomainExpense>> {
+        return observeAll(TransactionFilter(), SortOrder.NewestFirst)
             .map { it.take(limit) }
     }
 
     override fun observeMonthSummary(): Flow<MonthSummary> {
         val now = clock.now()
-        val monthKey = "${now.toLocalDateTime(TimeZone.currentSystemDefault()).year}-${now.toLocalDateTime(TimeZone.currentSystemDefault()).monthNumber}"
+        val localDate = now.toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val monthKey = "${localDate.year}-${localDate.monthNumber.toString().padStart(2, '0')}"
         
         return kotlinx.coroutines.flow.flow {
             val queries = getQueries()
@@ -49,57 +51,53 @@ class SqlDelightExpenseRepository(
                 .mapToList(dispatchers.io)
                 .map { queryResult ->
                     val total = queryResult.firstOrNull()?.totalSpent ?: 0L
-                    val count = queryResult.firstOrNull()?.transactionCount ?: 0L
-                    MonthSummary(total, count.toInt())
+                    MonthSummary(
+                        totalPaise = total,
+                        previousMonthTotalPaise = 0L,
+                        budgetPaise = 500000L
+                    )
                 }
                 .collect { emit(it) }
         }
     }
 
     override fun observeAnalytics(period: Period): Flow<AnalyticsSummary> {
-        val now = clock.now()
-        val dateRange = when (period) {
-            Period.WEEK -> DateRange(
-                start = now.minus(kotlin.datetime.DateTimePeriod(days = 7)),
-                end = now
-            )
-            Period.MONTH -> DateRange(
-                start = now.minus(kotlin.datetime.DateTimePeriod(months = 1)),
-                end = now
-            )
-            Period.YEAR -> DateRange(
-                start = now.minus(kotlin.datetime.DateTimePeriod(years = 1)),
-                end = now
-            )
-        }
-
-        return observeAll(TransactionFilter(dateRange = dateRange), SortOrder.DATE_DESC)
+        return observeAll(TransactionFilter(), SortOrder.NewestFirst)
             .map { expenses ->
                 val totalSpent = expenses.sumOf { it.amountPaise }
-                val categoryBreakdown = expenses.groupBy { it.category }
-                    .mapValues { it.value.sumOf { e -> e.amountPaise } }
-                AnalyticsSummary(totalSpent, categoryBreakdown)
+                val categories = expenses.groupBy { it.category }
+                    .map { (cat, list) ->
+                        val amount = list.sumOf { it.amountPaise }
+                        val ratio = if (totalSpent > 0) amount.toFloat() / totalSpent.toFloat() else 0f
+                        CategorySpend(cat, amount, ratio)
+                    }
+                AnalyticsSummary(
+                    period = period,
+                    totalPaise = totalSpent,
+                    points = emptyList(),
+                    highlightIndex = 0,
+                    categories = categories
+                )
             }
     }
 
-    override fun observeAll(filter: TransactionFilter, sort: SortOrder): Flow<List<Expense>> {
+    override fun observeAll(filter: TransactionFilter, sort: SortOrder): Flow<List<DomainExpense>> {
         return kotlinx.coroutines.flow.flow {
             val queries = getQueries()
             val query = when {
-                filter.query != null -> {
+                filter.query.isNotEmpty() -> {
                     queries.expenseQueries.searchExpenses("%${filter.query}%")
                 }
-                filter.category != null -> {
-                    queries.expenseQueries.selectExpensesByCategory(filter.category.name)
+                filter.categories.isNotEmpty() -> {
+                    queries.expenseQueries.selectExpensesByCategory(filter.categories.first().name)
                 }
-                filter.paymentMethod != null -> {
-                    queries.expenseQueries.selectExpensesByPaymentMethod(filter.paymentMethod)
+                filter.paymentMethods.isNotEmpty() -> {
+                    queries.expenseQueries.selectExpensesByPaymentMethod(filter.paymentMethods.first())
                 }
                 filter.dateRange != null -> {
-                    queries.expenseQueries.selectExpensesByDateRange(
-                        filter.dateRange.start.toEpochMilliseconds(),
-                        filter.dateRange.end.toEpochMilliseconds()
-                    )
+                    val startMs = filter.dateRange.start.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                    val endMs = filter.dateRange.end.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+                    queries.expenseQueries.selectExpensesByDateRange(startMs, endMs)
                 }
                 else -> {
                     queries.expenseQueries.selectAllExpenses()
@@ -108,14 +106,13 @@ class SqlDelightExpenseRepository(
 
             query.asFlow()
                 .mapToList(dispatchers.io)
-                .map { entities ->
+                .map { entities: List<DbExpense> ->
                     entities.map { it.toDomainModel() }
                         .let { expenses ->
                             when (sort) {
-                                SortOrder.DATE_ASC -> expenses.sortedBy { it.timestamp }
-                                SortOrder.DATE_DESC -> expenses.sortedByDescending { it.timestamp }
-                                SortOrder.AMOUNT_ASC -> expenses.sortedBy { it.amountPaise }
-                                SortOrder.AMOUNT_DESC -> expenses.sortedByDescending { it.amountPaise }
+                                SortOrder.OldestFirst -> expenses.sortedBy { it.timestamp }
+                                SortOrder.NewestFirst -> expenses.sortedByDescending { it.timestamp }
+                                SortOrder.HighestAmount -> expenses.sortedByDescending { it.amountPaise }
                             }
                         }
                 }
@@ -123,13 +120,14 @@ class SqlDelightExpenseRepository(
         }
     }
 
-    override suspend fun getExpenseById(id: String): Expense? = withContext(dispatchers.io) {
+    override suspend fun getExpenseById(id: String): DomainExpense? = withContext(dispatchers.io) {
         getQueries().expenseQueries.selectExpenseById(id).executeAsOneOrNull()?.toDomainModel()
     }
 
-    override suspend fun addExpense(expense: Expense) = withContext(dispatchers.io) {
-        getQueries().transaction {
-            getQueries().expenseQueries.insertExpense(
+    override suspend fun addExpense(expense: DomainExpense) = withContext(dispatchers.io) {
+        val db = getQueries()
+        db.transaction {
+            db.expenseQueries.insertExpense(
                 id = expense.id,
                 amount = expense.amountPaise,
                 category = expense.category.name,
@@ -138,19 +136,19 @@ class SqlDelightExpenseRepository(
                 description = expense.merchant,
                 version = 1,
                 updatedAt = clock.now().toEpochMilliseconds(),
-                deviceId = "device-1", // TODO: Get from platform
+                deviceId = "device-1",
                 isDeleted = 0,
                 syncState = "PENDING"
             )
 
-            // Add sync outbox entry
-            addSyncOutboxEntry("Expense", expense.id, "CREATE", expense)
+            addSyncOutboxEntry(db, "Expense", expense.id, "CREATE", expense)
         }
     }
 
-    override suspend fun updateExpense(expense: Expense) = withContext(dispatchers.io) {
-        getQueries().transaction {
-            getQueries().expenseQueries.updateExpense(
+    override suspend fun updateExpense(expense: DomainExpense) = withContext(dispatchers.io) {
+        val db = getQueries()
+        db.transaction {
+            db.expenseQueries.updateExpense(
                 amount = expense.amountPaise,
                 category = expense.category.name,
                 paymentMethod = expense.paymentMethod,
@@ -160,27 +158,26 @@ class SqlDelightExpenseRepository(
                 id = expense.id
             )
 
-            // Add sync outbox entry
-            addSyncOutboxEntry("Expense", expense.id, "UPDATE", expense)
+            addSyncOutboxEntry(db, "Expense", expense.id, "UPDATE", expense)
         }
     }
 
     override suspend fun delete(id: String) = withContext(dispatchers.io) {
-        getQueries().transaction {
-            getQueries().expenseQueries.deleteExpense(
+        val db = getQueries()
+        db.transaction {
+            db.expenseQueries.deleteExpense(
                 updatedAt = clock.now().toEpochMilliseconds(),
                 id = id
             )
 
-            // Add sync outbox entry
-            addSyncOutboxEntry("Expense", id, "DELETE", mapOf("id" to id))
+            addSyncOutboxEntry(db, "Expense", id, "DELETE", mapOf("id" to id))
         }
     }
 
-    override suspend fun restore(expense: Expense) = withContext(dispatchers.io) {
-        getQueries().transaction {
-            // Restore by updating isDeleted to 0
-            getQueries().expenseQueries.updateExpense(
+    override suspend fun restore(expense: DomainExpense) = withContext(dispatchers.io) {
+        val db = getQueries()
+        db.transaction {
+            db.expenseQueries.updateExpense(
                 amount = expense.amountPaise,
                 category = expense.category.name,
                 paymentMethod = expense.paymentMethod,
@@ -190,21 +187,20 @@ class SqlDelightExpenseRepository(
                 id = expense.id
             )
 
-            // Add sync outbox entry
-            addSyncOutboxEntry("Expense", expense.id, "UPDATE", expense)
+            addSyncOutboxEntry(db, "Expense", expense.id, "UPDATE", expense)
         }
     }
 
-    private fun addSyncOutboxEntry(tableName: String, recordId: String, operation: String, payload: Any) {
+    private fun addSyncOutboxEntry(db: FinPilotDatabase, tableName: String, recordId: String, operation: String, payload: Any) {
         @OptIn(ExperimentalUuidApi::class)
         val id = Uuid.random().toString()
         val payloadJson = when (payload) {
-            is Expense -> """{"id":"${payload.id}","amount":${payload.amountPaise},"category":"${payload.category.name}","paymentMethod":"${payload.paymentMethod}","date":${payload.timestamp.toEpochMilliseconds()},"description":"${payload.merchant}"}"""
+            is DomainExpense -> """{"id":"${payload.id}","amount":${payload.amountPaise},"category":"${payload.category.name}","paymentMethod":"${payload.paymentMethod}","date":${payload.timestamp.toEpochMilliseconds()},"description":"${payload.merchant}"}"""
             is Map<*, *> -> payload.toString()
             else -> """{"id":"$recordId"}"""
         }
         
-        getQueries().syncOutboxQueries.insertSyncOutbox(
+        db.syncOutboxQueries.insertSyncOutbox(
             id = id,
             tableName = tableName,
             recordId = recordId,
@@ -216,11 +212,12 @@ class SqlDelightExpenseRepository(
         )
     }
 
-    private fun com.example.myapplication.db.Expense.toDomainModel(): Expense {
-        return Expense(
+    private fun DbExpense.toDomainModel(): DomainExpense {
+        val cat = runCatching { Category.valueOf(category) }.getOrDefault(Category.Food)
+        return DomainExpense(
             id = id,
             amountPaise = amount,
-            category = Category.valueOf(category),
+            category = cat,
             merchant = description,
             paymentMethod = paymentMethod,
             timestamp = Instant.fromEpochMilliseconds(date)

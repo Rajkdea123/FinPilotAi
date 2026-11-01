@@ -26,14 +26,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -49,6 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.myapplication.ui.components.AppTextField
 import com.example.myapplication.ui.components.PrimaryButton
 import com.example.myapplication.ui.components.ScreenTopBar
@@ -272,63 +271,66 @@ private fun CurrencyBottomSheet(
     onCurrencySelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState()
+    Dialog(
+        onDismissRequest = onDismiss
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surface
         ) {
-            Text(
-                text = "Select currency",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = MaterialTheme.colorScheme.onBackground
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Select currency",
+                    style = MaterialTheme.typography.headlineSmall.copy(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground
+                )
 
-            val currencies = listOf(
-                "Indian Rupee (₹)" to true,
-                "US Dollar ($)" to false,
-                "Euro (€)" to false,
-                "British Pound (£)" to false
-            )
+                val currencies = listOf(
+                    "Indian Rupee (₹)" to true,
+                    "US Dollar ($)" to false,
+                    "Euro (€)" to false,
+                    "British Pound (£)" to false
+                )
 
-            currencies.forEach { (curr, enabled) ->
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .clickable(enabled = enabled) {
-                            if (enabled) onCurrencySelected(curr)
-                        },
-                    color = MaterialTheme.colorScheme.surfaceVariant
-                ) {
-                    Row(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                currencies.forEach { (curr, enabled) ->
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable(enabled = enabled) {
+                                if (enabled) onCurrencySelected(curr)
+                            },
+                        color = MaterialTheme.colorScheme.surfaceVariant
                     ) {
-                        Text(
-                            text = curr,
-                            color = if (enabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = if (curr == selectedCurrency) FontWeight.Bold else FontWeight.Normal
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = curr,
+                                color = if (enabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontWeight = if (curr == selectedCurrency) FontWeight.Bold else FontWeight.Normal
+                                )
                             )
-                        )
-                        RadioButton(
-                            selected = curr == selectedCurrency,
-                            onClick = { if (enabled) onCurrencySelected(curr) },
-                            enabled = enabled
-                        )
+                            RadioButton(
+                                selected = curr == selectedCurrency,
+                                onClick = { if (enabled) onCurrencySelected(curr) },
+                                enabled = enabled
+                            )
+                        }
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-actual class NotificationPermissionChecker {
+actual class NotificationPermissionChecker actual constructor() {
 
     private val _status = MutableStateFlow<PermissionStatus>(PermissionStatus.NotDetermined)
     private var context: Context? = null

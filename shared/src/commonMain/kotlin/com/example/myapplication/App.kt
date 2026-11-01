@@ -13,7 +13,7 @@ import com.example.myapplication.domain.repository.SettingsRepository
 import com.example.myapplication.ui.navigation.AppBottomBar
 import com.example.myapplication.ui.navigation.AppNavHost
 import com.example.myapplication.ui.navigation.Route
-import com.example.myapplication.ui.navigation.TabBackStackManager
+import com.example.myapplication.ui.navigation.rememberTabBackStackManager
 import com.example.myapplication.ui.navigation.clearBackStackRoutes
 import com.example.myapplication.ui.navigation.fullScreenRoutes
 import com.example.myapplication.ui.theme.AppTheme
@@ -67,10 +67,25 @@ fun App() {
             val showBottomBar = currentRoute !in fullScreenRoutes
 
             if (showBottomBar) {
+                val currentBottomNavRoute = when (currentRoute) {
+                    Route.Dashboard -> com.example.myapplication.ui.navigation.BottomNavRoute.Home
+                    Route.Stats -> com.example.myapplication.ui.navigation.BottomNavRoute.Stats
+                    Route.AddExpense -> com.example.myapplication.ui.navigation.BottomNavRoute.Add
+                    Route.AI -> com.example.myapplication.ui.navigation.BottomNavRoute.AI
+                    Route.Profile -> com.example.myapplication.ui.navigation.BottomNavRoute.Profile
+                    else -> com.example.myapplication.ui.navigation.BottomNavRoute.Home
+                }
+
                 AppBottomBar(
-                    currentRoute = currentRoute,
-                    onRouteSelected = { route ->
-                        // Bottom nav tabs clear back stack
+                    currentRoute = currentBottomNavRoute,
+                    onRouteSelected = { bottomNavRoute ->
+                        val route = when (bottomNavRoute) {
+                            com.example.myapplication.ui.navigation.BottomNavRoute.Home -> Route.Dashboard
+                            com.example.myapplication.ui.navigation.BottomNavRoute.Stats -> Route.Stats
+                            com.example.myapplication.ui.navigation.BottomNavRoute.Add -> Route.AddExpense
+                            com.example.myapplication.ui.navigation.BottomNavRoute.AI -> Route.AI
+                            com.example.myapplication.ui.navigation.BottomNavRoute.Profile -> Route.Profile
+                        }
                         navigate(route, clearBackStack = true)
                     },
                     modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter)

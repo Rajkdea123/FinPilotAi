@@ -1,7 +1,8 @@
 package com.example.myapplication.db
 
 import app.cash.sqldelight.driver.sqlite.SqliteDriver
-import com.example.myapplication.di.AppCoroutineDispatchers
+import com.example.myapplication.di.core.AppCoroutineDispatchers
+import com.example.myapplication.di.core.DefaultAppCoroutineDispatchers
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.Clock
 import kotlin.test.Test
@@ -15,11 +16,7 @@ class DatabaseTest {
         val driver = SqliteDriver(FinPilotDatabase.Schema, ":memory:")
         val database = FinPilotDatabase(driver)
         val clock = Clock.System
-        val dispatchers = AppCoroutineDispatchers(
-            main = kotlinx.coroutines.Dispatchers.Main.immediate,
-            io = kotlinx.coroutines.Dispatchers.Default,
-            default = kotlinx.coroutines.Dispatchers.Default
-        )
+        val dispatchers = DefaultAppCoroutineDispatchers()
 
         // Test expense insertion
         database.expenseQueries.insertExpense(
