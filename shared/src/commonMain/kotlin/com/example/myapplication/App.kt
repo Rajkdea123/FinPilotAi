@@ -58,9 +58,7 @@ fun App() {
 
         fun navigateBack() {
             val popped = tabBackStackManager.pop()
-            if (popped != null) {
-                currentRoute = popped
-            }
+            currentRoute = popped ?: Route.Dashboard
         }
 
         val showBottomBar = currentRoute !in fullScreenRoutes
@@ -81,14 +79,14 @@ fun App() {
                     AppBottomBar(
                         currentRoute = currentBottomNavRoute,
                         onRouteSelected = { bottomNavRoute ->
-                            val route = when (bottomNavRoute) {
-                                com.example.myapplication.ui.navigation.BottomNavRoute.Home -> Route.Dashboard
-                                com.example.myapplication.ui.navigation.BottomNavRoute.Stats -> Route.Stats
-                                com.example.myapplication.ui.navigation.BottomNavRoute.Add -> Route.AddExpense
-                                com.example.myapplication.ui.navigation.BottomNavRoute.AI -> Route.AI
-                                com.example.myapplication.ui.navigation.BottomNavRoute.Profile -> Route.Profile
+                            val (route, shouldClear) = when (bottomNavRoute) {
+                                com.example.myapplication.ui.navigation.BottomNavRoute.Home -> Pair(Route.Dashboard, true)
+                                com.example.myapplication.ui.navigation.BottomNavRoute.Stats -> Pair(Route.Stats, true)
+                                com.example.myapplication.ui.navigation.BottomNavRoute.Add -> Pair(Route.AddExpense, false)
+                                com.example.myapplication.ui.navigation.BottomNavRoute.AI -> Pair(Route.AI, true)
+                                com.example.myapplication.ui.navigation.BottomNavRoute.Profile -> Pair(Route.Profile, true)
                             }
-                            navigate(route, clearBackStack = true)
+                            navigate(route, clearBackStack = shouldClear)
                         }
                     )
                 }

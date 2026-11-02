@@ -58,7 +58,8 @@ class FakeFinanceAssistant : FinanceAssistant {
         }
     }
 
+    @OptIn(kotlin.uuid.ExperimentalUuidApi::class)
     private fun generateId(): String {
-        return "chat_${Clock.System.now().toEpochMilliseconds()}"
+        return "chat_${kotlin.uuid.Uuid.random()}"
     }
 }

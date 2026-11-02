@@ -30,7 +30,7 @@ ORDER BY date DESC;
 
 -- Insert insight
 insertInsight:
-INSERT INTO Insight(id, title, content, category, date, version, updatedAt, deviceId, isDeleted, syncState)
+INSERT OR REPLACE INTO Insight(id, title, content, category, date, version, updatedAt, deviceId, isDeleted, syncState)
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Update insight

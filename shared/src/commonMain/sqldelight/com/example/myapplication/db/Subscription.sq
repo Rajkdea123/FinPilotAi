@@ -34,7 +34,7 @@ ORDER BY nextBillingDate ASC;
 
 -- Insert subscription
 insertSubscription:
-INSERT INTO Subscription(id, name, amount, category, billingCycle, nextBillingDate, isActive, version, updatedAt, deviceId, isDeleted, syncState)
+INSERT OR REPLACE INTO Subscription(id, name, amount, category, billingCycle, nextBillingDate, isActive, version, updatedAt, deviceId, isDeleted, syncState)
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Update subscription

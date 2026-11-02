@@ -57,6 +57,30 @@ object AppIcons {
             }
         }.build()
 
+    val SendIcon: ImageVector
+        get() = ImageVector.Builder(
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(22f, 2f)
+                lineTo(11f, 13f)
+                moveTo(22f, 2f)
+                lineTo(15f, 22f)
+                lineTo(11f, 13f)
+                lineTo(2f, 9f)
+                close()
+            }
+        }.build()
+
     val CheckIcon: ImageVector
         get() = ImageVector.Builder(
             defaultWidth = 24.dp,

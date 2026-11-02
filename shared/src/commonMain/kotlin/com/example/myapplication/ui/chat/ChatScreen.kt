@@ -26,6 +26,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +35,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -367,6 +370,14 @@ private fun InputRow(
                 focusedTextColor = MaterialTheme.colorScheme.onBackground,
                 unfocusedTextColor = MaterialTheme.colorScheme.onBackground
             ),
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+            keyboardActions = KeyboardActions(
+                onSend = {
+                    if (isEnabled) {
+                        onSendClicked()
+                    }
+                }
+            ),
             textStyle = MaterialTheme.typography.bodyMedium
         )
 
@@ -376,13 +387,13 @@ private fun InputRow(
             modifier = Modifier
                 .size(52.dp)
                 .clip(CircleShape)
-                .background(AppTheme.colors.ai)
+                .background(if (isEnabled) AppTheme.colors.ai else MaterialTheme.colorScheme.surfaceVariant)
                 .semantics { contentDescription = "Send" }
         ) {
             Icon(
-                painter = rememberVectorPainter(AppIcons.SyncIcon), // Using sync as send icon placeholder
+                painter = rememberVectorPainter(AppIcons.SendIcon),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onBackground,
+                tint = if (isEnabled) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(22.dp)
             )
         }

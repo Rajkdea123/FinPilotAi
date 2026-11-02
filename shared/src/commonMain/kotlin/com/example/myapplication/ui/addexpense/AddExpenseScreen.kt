@@ -109,7 +109,7 @@ fun AddExpenseScreen(
                     .semantics { contentDescription = "Back" }
             ) {
                 Icon(
-                    painter = rememberVectorPainter(AppIcons.SyncIcon), // Using sync as back icon for now
+                    painter = rememberVectorPainter(AppIcons.BackIcon),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.size(24.dp)

@@ -27,7 +27,7 @@ WHERE category = ? AND isDeleted = 0;
 
 -- Insert budget
 insertBudget:
-INSERT INTO Budget(id, total, category, budgetLimit, version, updatedAt, deviceId, isDeleted, syncState)
+INSERT OR REPLACE INTO Budget(id, total, category, budgetLimit, version, updatedAt, deviceId, isDeleted, syncState)
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Update budget
