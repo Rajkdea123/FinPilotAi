@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,15 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,10 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -44,22 +40,25 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.myapplication.domain.model.Category
+import com.example.myapplication.domain.model.Expense
+import com.example.myapplication.domain.model.MonthSummary
 import com.example.myapplication.ui.components.ExpenseRow
 import com.example.myapplication.ui.components.SyncStatusIndicator
 import com.example.myapplication.ui.icons.AppIcons
 import com.example.myapplication.ui.theme.AppTheme
-import org.koin.compose.koinInject
 import com.example.myapplication.ui.theme.ThemeMode
 import com.example.myapplication.util.MoneyFormatter
 import kotlinx.datetime.Clock
+import kotlinx.datetime.Instant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.koin.compose.koinInject
 
 @Composable
 fun DashboardScreen(
@@ -71,21 +70,35 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val syncStatus by syncManager.syncStatus.collectAsStateWithLifecycle()
 
+    DashboardContent(
+        uiState = uiState,
+        syncStatus = syncStatus,
+        onNavigateToInsights = onNavigateToInsights,
+        onNavigateToTransactions = onNavigateToTransactions,
+        onRefresh = { viewModel.onEvent(DashboardEvent.Refresh) }
+    )
+}
+
+@Composable
+fun DashboardContent(
+    uiState: DashboardUiState,
+    syncStatus: com.example.myapplication.sync.SyncStatus,
+    onNavigateToInsights: () -> Unit = {},
+    onNavigateToTransactions: () -> Unit = {},
+    onRefresh: () -> Unit = {}
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
+            .statusBarsPadding()
     ) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 100.dp)
+            contentPadding = PaddingValues(top = 8.dp, bottom = 20.dp)
         ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
             item {
                 Header(onNavigateToInsights = onNavigateToInsights, syncStatus = syncStatus)
             }
@@ -103,14 +116,14 @@ fun DashboardScreen(
                 item {
                     ErrorCard(
                         error = errorMsg,
-                        onRetry = { viewModel.onEvent(DashboardEvent.Refresh) }
+                        onRetry = onRefresh
                     )
                 }
             } else {
                 item {
                     BalanceCard(
-                        summary = uiState.summary!!,
-                        onRefresh = { viewModel.onEvent(DashboardEvent.Refresh) }
+                        summary = uiState.summary ?: MonthSummary(0, 0, 500000L),
+                        onRefresh = onRefresh
                     )
                 }
 
@@ -120,7 +133,7 @@ fun DashboardScreen(
 
                 item {
                     AiInsightCard(
-                        insight = uiState.insight,
+                        insight = uiState.insight.ifBlank { "No insight available" },
                         onClick = onNavigateToInsights
                     )
                 }
@@ -133,8 +146,18 @@ fun DashboardScreen(
                     RecentTransactionsHeader(onSeeAll = onNavigateToTransactions)
                 }
 
-                items(uiState.recentExpenses) { expense ->
-                    ExpenseRow(expense = expense)
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                item {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        uiState.recentExpenses.take(5).forEach { expense ->
+                            ExpenseRow(expense = expense)
+                        }
+                    }
                 }
             }
         }
@@ -162,21 +185,29 @@ private fun Header(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Column {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
             Text(
                 text = greeting,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp)
+                style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = "$monthName overview",
                 color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.headlineLarge.copy(
+                style = MaterialTheme.typography.headlineSmall.copy(
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold
-                )
+                ),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
+
+        Spacer(modifier = Modifier.width(8.dp))
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -210,7 +241,7 @@ private fun Header(
 
 @Composable
 private fun BalanceCard(
-    summary: com.example.myapplication.domain.model.MonthSummary,
+    summary: MonthSummary,
     onRefresh: () -> Unit
 ) {
     var animateProgress by remember { mutableFloatStateOf(0f) }
@@ -224,11 +255,19 @@ private fun BalanceCard(
         animateProgress = 1f
     }
 
-    val percentage = (summary.totalPaise.toFloat() / summary.budgetPaise.toFloat() * 100).coerceIn(0f, 100f)
-    val previousPercentage = if (summary.previousMonthTotalPaise > 0) {
+    val percentage = if (summary.budgetPaise > 0) {
+        (summary.totalPaise.toFloat() / summary.budgetPaise.toFloat() * 100).coerceIn(0f, 100f)
+    } else 0f
+
+    val deltaPercent = if (summary.previousMonthTotalPaise > 0) {
         ((summary.totalPaise - summary.previousMonthTotalPaise).toFloat() / summary.previousMonthTotalPaise.toFloat() * 100).toInt()
     } else 0
-    val isIncrease = summary.totalPaise > summary.previousMonthTotalPaise
+
+    val (chipText, chipColor) = when {
+        deltaPercent > 0 -> Pair("▲ $deltaPercent% vs last month", AppTheme.colors.warning)
+        deltaPercent < 0 -> Pair("▼ ${kotlin.math.abs(deltaPercent)}% vs last month", MaterialTheme.colorScheme.primary)
+        else -> Pair("No change vs last month", MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 
     val progressColor = when {
         percentage > 100f -> AppTheme.colors.danger
@@ -271,9 +310,9 @@ private fun BalanceCard(
                 color = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 Text(
-                    text = "${if (isIncrease) "▲" else "▼"} ${kotlin.math.abs(previousPercentage)}% vs last month",
+                    text = chipText,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    color = if (isIncrease) AppTheme.colors.warning else MaterialTheme.colorScheme.primary,
+                    color = chipColor,
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.sp
@@ -392,67 +431,6 @@ private fun RecentTransactionsHeader(onSeeAll: () -> Unit) {
 }
 
 @Composable
-private fun ExpenseRow(expense: com.example.myapplication.domain.model.Expense) {
-    val categoryColor = when (expense.category) {
-        Category.Food -> AppTheme.colors.warning
-        Category.Transport -> AppTheme.colors.info
-        Category.Bills -> MaterialTheme.colorScheme.primary
-        Category.Shopping -> AppTheme.colors.ai
-        Category.Entertainment -> AppTheme.colors.danger
-    }
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(60.dp)
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                modifier = Modifier.size(44.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = rememberVectorPainter(AppIcons.DeviceIcon),
-                        contentDescription = "${expense.category} icon",
-                        tint = categoryColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-
-            Column {
-                Text(
-                    text = expense.merchant,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
-                )
-                Text(
-                    text = "${expense.category.name} · ${expense.paymentMethod}",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp)
-                )
-            }
-        }
-
-        Text(
-            text = MoneyFormatter.formatPaise(expense.amountPaise),
-            color = MaterialTheme.colorScheme.onBackground,
-            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-        )
-    }
-}
-
-@Composable
 private fun LoadingSkeleton() {
     Column(
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -508,26 +486,61 @@ private fun ErrorCard(error: String, onRetry: () -> Unit) {
     }
 }
 
-@Preview(name = "Loaded - Dark", showBackground = true)
+private val sampleExpenses = listOf(
+    Expense("1", 45000, Category.Food, "Zomato", "UPI", Instant.fromEpochMilliseconds(1700000000000L)),
+    Expense("2", 30000, Category.Transport, "Metro card", "Card", Instant.fromEpochMilliseconds(1699900000000L)),
+    Expense("3", 200000, Category.Bills, "Rent", "Bank", Instant.fromEpochMilliseconds(1699800000000L)),
+    Expense("4", 150000, Category.Shopping, "Amazon", "Card", Instant.fromEpochMilliseconds(1699700000000L)),
+    Expense("5", 80000, Category.Entertainment, "Cinema", "Cash", Instant.fromEpochMilliseconds(1699600000000L)),
+    Expense("6", 50000, Category.Food, "Swiggy", "UPI", Instant.fromEpochMilliseconds(1699500000000L)),
+    Expense("7", 120000, Category.Bills, "Electricity", "UPI", Instant.fromEpochMilliseconds(1699400000000L)),
+    Expense("8", 90000, Category.Shopping, "Myntra", "Card", Instant.fromEpochMilliseconds(1699300000000L))
+)
+
+@Preview(name = "0 Items - Dark", showBackground = true)
 @Composable
-fun DashboardScreenDarkPreview() {
+fun Dashboard0ItemsDarkPreview() {
     AppTheme(themeMode = ThemeMode.Dark) {
-        DashboardScreen()
+        DashboardContent(
+            uiState = DashboardUiState(
+                summary = MonthSummary(0, 0, 500000L),
+                recentExpenses = emptyList(),
+                insight = "Food spending is 28% above your monthly average.",
+                isLoading = false
+            ),
+            syncStatus = com.example.myapplication.sync.SyncStatus(isOnline = true, isSyncing = false, pendingChanges = 0)
+        )
     }
 }
 
-@Preview(name = "Loaded - Light", showBackground = true)
+@Preview(name = "3 Items - Light", showBackground = true)
 @Composable
-fun DashboardScreenLightPreview() {
+fun Dashboard3ItemsLightPreview() {
     AppTheme(themeMode = ThemeMode.Light) {
-        DashboardScreen()
+        DashboardContent(
+            uiState = DashboardUiState(
+                summary = MonthSummary(4250000, 3900000, 5000000L),
+                recentExpenses = sampleExpenses.take(3),
+                insight = "Food spending is 28% above your monthly average.",
+                isLoading = false
+            ),
+            syncStatus = com.example.myapplication.sync.SyncStatus(isOnline = true, isSyncing = false, pendingChanges = 0)
+        )
     }
 }
 
-@Preview(name = "Loading - Dark", showBackground = true)
+@Preview(name = "8 Items (Shows 5) - Dark", showBackground = true)
 @Composable
-fun DashboardScreenLoadingDarkPreview() {
+fun Dashboard8ItemsShows5DarkPreview() {
     AppTheme(themeMode = ThemeMode.Dark) {
-        DashboardScreen()
+        DashboardContent(
+            uiState = DashboardUiState(
+                summary = MonthSummary(4250000, 3900000, 5000000L),
+                recentExpenses = sampleExpenses, // 8 items passed, composable renders max 5
+                insight = "Food spending is 28% above your monthly average.",
+                isLoading = false
+            ),
+            syncStatus = com.example.myapplication.sync.SyncStatus(isOnline = true, isSyncing = false, pendingChanges = 0)
+        )
     }
 }

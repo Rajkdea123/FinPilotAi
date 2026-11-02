@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -28,7 +29,7 @@ import com.example.myapplication.ui.theme.AppTheme
 import com.example.myapplication.util.MoneyFormatter
 
 @Composable
-fun ExpenseRow(expense: Expense) {
+fun ExpenseRow(expense: Expense, modifier: Modifier = Modifier) {
     val categoryColor = when (expense.category) {
         Category.Food -> AppTheme.colors.warning
         Category.Transport -> AppTheme.colors.info
@@ -37,10 +38,19 @@ fun ExpenseRow(expense: Expense) {
         Category.Entertainment -> AppTheme.colors.danger
     }
 
+    val categoryIcon = when (expense.category) {
+        Category.Food -> AppIcons.FoodIcon
+        Category.Transport -> AppIcons.TransportIcon
+        Category.Bills -> AppIcons.BillsIcon
+        Category.Shopping -> AppIcons.ShoppingIcon
+        Category.Entertainment -> AppIcons.EntertainmentIcon
+    }
+
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .height(60.dp),
+            .height(60.dp)
+            .padding(vertical = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -57,7 +67,7 @@ fun ExpenseRow(expense: Expense) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        painter = rememberVectorPainter(AppIcons.DeviceIcon),
+                        painter = rememberVectorPainter(categoryIcon),
                         contentDescription = "${expense.category} icon",
                         tint = categoryColor,
                         modifier = Modifier.size(20.dp)

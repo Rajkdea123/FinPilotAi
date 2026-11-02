@@ -40,7 +40,6 @@ val fullScreenRoutes = setOf(
     Route.Transactions,
     Route.AddExpense,
     Route.AddExpenseEdit(""),
-    Route.Profile,
     Route.EditProfile,
     Route.Budget,
     Route.Notifications,

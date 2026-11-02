@@ -1,21 +1,23 @@
 package com.example.myapplication
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.Modifier
 import com.example.myapplication.domain.model.AppSettings
 import com.example.myapplication.domain.repository.SettingsRepository
 import com.example.myapplication.ui.navigation.AppBottomBar
 import com.example.myapplication.ui.navigation.AppNavHost
 import com.example.myapplication.ui.navigation.Route
-import com.example.myapplication.ui.navigation.rememberTabBackStackManager
 import com.example.myapplication.ui.navigation.clearBackStackRoutes
 import com.example.myapplication.ui.navigation.fullScreenRoutes
+import com.example.myapplication.ui.navigation.rememberTabBackStackManager
 import com.example.myapplication.ui.theme.AppTheme
 import org.koin.compose.koinInject
 
@@ -32,21 +34,19 @@ fun App() {
         val tabBackStackManager = rememberTabBackStackManager()
 
         fun navigate(route: Route, clearBackStack: Boolean = false) {
-            // Check if navigating to a bottom tab
             val isBottomTab = route in setOf(
                 Route.Dashboard,
                 Route.Stats,
                 Route.AI,
                 Route.Insights,
-                Route.Sync
+                Route.Sync,
+                Route.Profile
             )
 
             if (isBottomTab) {
-                // Switch to tab - use tab back stack
                 tabBackStackManager.setCurrentTab(route)
                 currentRoute = route
             } else {
-                // Navigate within current tab
                 if (clearBackStack) {
                     tabBackStackManager.clearCurrentBackStack()
                 } else {
@@ -63,44 +63,46 @@ fun App() {
             }
         }
 
-        Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
-            val showBottomBar = currentRoute !in fullScreenRoutes
+        val showBottomBar = currentRoute !in fullScreenRoutes
 
-            if (showBottomBar) {
-                val currentBottomNavRoute = when (currentRoute) {
-                    Route.Dashboard -> com.example.myapplication.ui.navigation.BottomNavRoute.Home
-                    Route.Stats -> com.example.myapplication.ui.navigation.BottomNavRoute.Stats
-                    Route.AddExpense -> com.example.myapplication.ui.navigation.BottomNavRoute.Add
-                    Route.AI -> com.example.myapplication.ui.navigation.BottomNavRoute.AI
-                    Route.Profile -> com.example.myapplication.ui.navigation.BottomNavRoute.Profile
-                    else -> com.example.myapplication.ui.navigation.BottomNavRoute.Home
-                }
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            bottomBar = {
+                if (showBottomBar) {
+                    val currentBottomNavRoute = when (currentRoute) {
+                        Route.Dashboard -> com.example.myapplication.ui.navigation.BottomNavRoute.Home
+                        Route.Stats -> com.example.myapplication.ui.navigation.BottomNavRoute.Stats
+                        Route.AddExpense -> com.example.myapplication.ui.navigation.BottomNavRoute.Add
+                        Route.AI -> com.example.myapplication.ui.navigation.BottomNavRoute.AI
+                        Route.Profile -> com.example.myapplication.ui.navigation.BottomNavRoute.Profile
+                        else -> com.example.myapplication.ui.navigation.BottomNavRoute.Home
+                    }
 
-                AppBottomBar(
-                    currentRoute = currentBottomNavRoute,
-                    onRouteSelected = { bottomNavRoute ->
-                        val route = when (bottomNavRoute) {
-                            com.example.myapplication.ui.navigation.BottomNavRoute.Home -> Route.Dashboard
-                            com.example.myapplication.ui.navigation.BottomNavRoute.Stats -> Route.Stats
-                            com.example.myapplication.ui.navigation.BottomNavRoute.Add -> Route.AddExpense
-                            com.example.myapplication.ui.navigation.BottomNavRoute.AI -> Route.AI
-                            com.example.myapplication.ui.navigation.BottomNavRoute.Profile -> Route.Profile
+                    AppBottomBar(
+                        currentRoute = currentBottomNavRoute,
+                        onRouteSelected = { bottomNavRoute ->
+                            val route = when (bottomNavRoute) {
+                                com.example.myapplication.ui.navigation.BottomNavRoute.Home -> Route.Dashboard
+                                com.example.myapplication.ui.navigation.BottomNavRoute.Stats -> Route.Stats
+                                com.example.myapplication.ui.navigation.BottomNavRoute.Add -> Route.AddExpense
+                                com.example.myapplication.ui.navigation.BottomNavRoute.AI -> Route.AI
+                                com.example.myapplication.ui.navigation.BottomNavRoute.Profile -> Route.Profile
+                            }
+                            navigate(route, clearBackStack = true)
                         }
-                        navigate(route, clearBackStack = true)
-                    },
-                    modifier = androidx.compose.ui.Modifier.align(androidx.compose.ui.Alignment.BottomCenter)
-                )
+                    )
+                }
             }
-
+        ) { innerPadding ->
             AppNavHost(
                 currentRoute = currentRoute,
                 onNavigate = { route ->
-                    // Check if route should clear back stack
                     val shouldClear = route in clearBackStackRoutes || 
                                      com.example.myapplication.ui.navigation.shouldClearBackStackForSignOut(currentRoute, route)
                     navigate(route, clearBackStack = shouldClear)
                 },
-                onBack = { navigateBack() }
+                onBack = { navigateBack() },
+                modifier = Modifier.padding(innerPadding)
             )
         }
     }

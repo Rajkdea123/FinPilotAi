@@ -1,21 +1,22 @@
 package com.example.myapplication.ui.navigation
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -55,73 +56,81 @@ fun AppBottomBar(
     val items = listOf(
         BottomNavItem(BottomNavRoute.Home, "Home", AppIcons.DeviceIcon),
         BottomNavItem(BottomNavRoute.Stats, "Stats", AppIcons.SyncIcon),
-        BottomNavItem(BottomNavRoute.Add, "", AppIcons.SparkleIcon),
+        BottomNavItem(BottomNavRoute.Add, "", AppIcons.PlusIcon),
         BottomNavItem(BottomNavRoute.AI, "AI", AppIcons.SparkleIcon),
         BottomNavItem(BottomNavRoute.Profile, "Profile", AppIcons.BellIcon)
     )
 
-    Surface(
+    Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(84.dp)
-            .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                RoundedCornerShape(0.dp)
-            ),
-        color = MaterialTheme.colorScheme.surface
+            .windowInsetsPadding(WindowInsets.navigationBars)
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            items.forEach { item ->
-                if (item.route == BottomNavRoute.Add) {
-                    // Center Add button
-                    Box(
-                        modifier = Modifier
-                            .offset(y = (-28).dp)
-                            .size(56.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                            .clickable { onRouteSelected(item.route) }
-                            .semantics { contentDescription = "Add expense" },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = rememberVectorPainter(item.icon),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                } else {
-                    // Regular tab
-                    val isSelected = currentRoute == item.route
-                    Column(
-                        modifier = Modifier
-                            .padding(vertical = 8.dp, horizontal = 12.dp)
-                            .clickable { onRouteSelected(item.route) }
-                            .semantics {
-                                contentDescription = "${item.label} tab"
-                            },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            painter = rememberVectorPainter(item.icon),
-                            contentDescription = null,
-                            tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = item.label,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
-                        )
+        Column {
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outline,
+                thickness = 1.dp
+            )
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(84.dp),
+                color = MaterialTheme.colorScheme.surface
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    items.forEach { item ->
+                        if (item.route == BottomNavRoute.Add) {
+                            // Center Add button
+                            Box(
+                                modifier = Modifier
+                                    .offset(y = (-28).dp)
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary)
+                                    .clickable { onRouteSelected(item.route) }
+                                    .semantics { contentDescription = "Add expense" },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = rememberVectorPainter(item.icon),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        } else {
+                            // Regular tab
+                            val isSelected = currentRoute == item.route
+                            Column(
+                                modifier = Modifier
+                                    .padding(vertical = 8.dp, horizontal = 12.dp)
+                                    .clickable { onRouteSelected(item.route) }
+                                    .semantics {
+                                        contentDescription = "${item.label} tab"
+                                    },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    painter = rememberVectorPainter(item.icon),
+                                    contentDescription = null,
+                                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = item.label,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp)
+                                )
+                            }
+                        }
                     }
                 }
             }

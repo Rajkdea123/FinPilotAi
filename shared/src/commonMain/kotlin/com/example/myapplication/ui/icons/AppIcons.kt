@@ -34,6 +34,29 @@ object AppIcons {
             }
         }.build()
 
+    val PlusIcon: ImageVector
+        get() = ImageVector.Builder(
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                fill = null,
+                fillAlpha = 1.0f,
+                stroke = SolidColor(Color.Black),
+                strokeAlpha = 1.0f,
+                strokeLineWidth = 2.5f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(12f, 5f)
+                verticalLineTo(19f)
+                moveTo(5f, 12f)
+                horizontalLineTo(19f)
+            }
+        }.build()
+
     val CheckIcon: ImageVector
         get() = ImageVector.Builder(
             defaultWidth = 24.dp,
@@ -294,6 +317,133 @@ object AppIcons {
                 verticalLineTo(4f)
                 horizontalLineTo(11f)
                 verticalLineTo(7f)
+            }
+        }.build()
+
+    val FoodIcon: ImageVector
+        get() = ImageVector.Builder(
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(3f, 3f)
+                horizontalLineToRelative(2f)
+                lineToRelative(2.6f, 11.6f)
+                arcToRelative(2f, 2f, 0f, false, false, 2f, 1.4f)
+                horizontalLineToRelative(9.8f)
+                arcToRelative(2f, 2f, 0f, false, false, 2f, -1.6f)
+                lineTo(23f, 6f)
+                horizontalLineTo(6f)
+            }
+        }.build()
+
+    val TransportIcon: ImageVector
+        get() = ImageVector.Builder(
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(2f, 7f)
+                horizontalLineToRelative(20f)
+                verticalLineToRelative(10f)
+                horizontalLineTo(2f)
+                close()
+                moveTo(2f, 11f)
+                horizontalLineToRelative(20f)
+            }
+        }.build()
+
+    val BillsIcon: ImageVector
+        get() = ImageVector.Builder(
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(14f, 2f)
+                horizontalLineTo(6f)
+                arcToRelative(2f, 2f, 0f, false, false, -2f, 2f)
+                verticalLineToRelative(16f)
+                arcToRelative(2f, 2f, 0f, false, false, 2f, 2f)
+                horizontalLineToRelative(12f)
+                arcToRelative(2f, 2f, 0f, false, false, 2f, -2f)
+                verticalLineTo(8f)
+                close()
+                moveTo(14f, 2f)
+                verticalLineToRelative(6f)
+                horizontalLineToRelative(6f)
+            }
+        }.build()
+
+    val ShoppingIcon: ImageVector
+        get() = ImageVector.Builder(
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(6f, 2f)
+                lineTo(3f, 6f)
+                verticalLineToRelative(14f)
+                arcToRelative(2f, 2f, 0f, false, false, 2f, 2f)
+                horizontalLineToRelative(14f)
+                arcToRelative(2f, 2f, 0f, false, false, 2f, -2f)
+                verticalLineTo(6f)
+                lineToRelative(-3f, -4f)
+                close()
+                moveTo(3f, 6f)
+                horizontalLineToRelative(18f)
+            }
+        }.build()
+
+    val EntertainmentIcon: ImageVector
+        get() = ImageVector.Builder(
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 24f,
+            viewportHeight = 24f
+        ).apply {
+            path(
+                fill = null,
+                stroke = SolidColor(Color.Black),
+                strokeLineWidth = 2f,
+                strokeLineCap = StrokeCap.Round,
+                strokeLineJoin = StrokeJoin.Round
+            ) {
+                moveTo(5f, 3f)
+                lineTo(19f, 12f)
+                lineTo(5f, 21f)
+                close()
             }
         }.build()
 }
