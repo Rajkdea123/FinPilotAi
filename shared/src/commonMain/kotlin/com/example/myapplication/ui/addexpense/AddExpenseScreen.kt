@@ -81,16 +81,8 @@ fun AddExpenseScreen(
     val showDatePicker = remember { mutableStateOf(false) }
     val showCategorySheet = remember { mutableStateOf(false) }
 
-    LaunchedEffect(uiState.isSaving) {
-        if (!uiState.isSaving && uiState.amountError == null && uiState.categoryError == null && uiState.amount.isNotBlank() && uiState.category != null) {
-            // Check if we just finished saving by checking if we were saving before
-            // This is a simple check - in production you'd use a more explicit success state
-        }
-    }
-
-    // Listen for save completion
-    LaunchedEffect(uiState.isSaving) {
-        if (!uiState.isSaving && uiState.amount.isNotBlank() && uiState.category != null) {
+    LaunchedEffect(uiState.isSaved) {
+        if (uiState.isSaved) {
             onExpenseAdded()
         }
     }

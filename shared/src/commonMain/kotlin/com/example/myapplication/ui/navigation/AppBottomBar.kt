@@ -64,7 +64,8 @@ fun AppBottomBar(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .windowInsetsPadding(WindowInsets.navigationBars)
+            .windowInsetsPadding(WindowInsets.navigationBars),
+        contentAlignment = Alignment.BottomCenter
     ) {
         Column {
             HorizontalDivider(
@@ -86,26 +87,8 @@ fun AppBottomBar(
                 ) {
                     items.forEach { item ->
                         if (item.route == BottomNavRoute.Add) {
-                            // Center Add button
-                            Box(
-                                modifier = Modifier
-                                    .offset(y = (-28).dp)
-                                    .size(56.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primary)
-                                    .clickable { onRouteSelected(item.route) }
-                                    .semantics { contentDescription = "Add expense" },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(
-                                    painter = rememberVectorPainter(item.icon),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                    modifier = Modifier.size(28.dp)
-                                )
-                            }
+                            Spacer(modifier = Modifier.size(56.dp))
                         } else {
-                            // Regular tab
                             val isSelected = currentRoute == item.route
                             Column(
                                 modifier = Modifier
@@ -134,6 +117,25 @@ fun AppBottomBar(
                     }
                 }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = (-20).dp)
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary)
+                .clickable { onRouteSelected(BottomNavRoute.Add) }
+                .semantics { contentDescription = "Add expense" },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = rememberVectorPainter(AppIcons.PlusIcon),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(28.dp)
+            )
         }
     }
 }

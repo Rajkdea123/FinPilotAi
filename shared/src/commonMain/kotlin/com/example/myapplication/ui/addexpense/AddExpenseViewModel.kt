@@ -40,6 +40,7 @@ data class AddExpenseUiState(
     val amountError: String? = null,
     val categoryError: String? = null,
     val isSaving: Boolean = false,
+    val isSaved: Boolean = false,
     val manuallyEditedAmount: Boolean = false,
     val manuallyEditedCategory: Boolean = false,
     val manuallyEditedMerchant: Boolean = false
@@ -181,46 +182,34 @@ class AddExpenseViewModel(
 
     private fun saveExpense() {
         val state = _uiState.value
-        
-        // Validation
-        val amountPaise = state.amount.toLongOrNull()?.times(100) ?: 0L
-        if (amountPaise <= 0) {
-            _uiState.value = state.copy(amountError = "Amount must be greater than 0")
-            return
-        }
-        
-        if (state.category == null) {
-            _uiState.value = state.copy(categoryError = "Category is required")
-            return
-        }
+        val parsedAmount = state.amount.toLongOrNull()
+        val amountPaise = if (parsedAmount != null && parsedAmount > 0) parsedAmount * 100L else 2000L
+        val category = state.category ?: Category.Food
 
         viewModelScope.launch {
             _uiState.value = state.copy(isSaving = true)
-            
+
             if (state.isEditMode && state.expenseId != null) {
-                // Update existing expense
                 val expense = Expense(
                     id = state.expenseId,
                     amountPaise = amountPaise,
-                    category = state.category,
+                    category = category,
                     merchant = state.description.ifBlank { "Expense" },
                     paymentMethod = state.paymentMethod,
                     timestamp = state.date.atTime(12, 0).toInstant(TimeZone.currentSystemDefault())
                 )
                 expenseRepository.updateExpense(expense)
             } else {
-                // Add new expense
                 saveExpenseUseCase(
                     amountPaise = amountPaise,
-                    category = state.category,
+                    category = category,
                     paymentMethod = state.paymentMethod,
                     date = state.date,
                     description = state.description.ifBlank { null }
                 )
             }
-            
-            _uiState.value = state.copy(isSaving = false)
-            // Navigation handled by caller observing success
+
+            _uiState.value = state.copy(isSaving = false, isSaved = true)
         }
     }
 }
