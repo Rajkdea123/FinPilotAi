@@ -24,7 +24,7 @@ WHERE id = ?;
 
 -- Insert sync outbox entry
 insertSyncOutbox:
-INSERT INTO SyncOutbox(id, tableName, recordId, operation, payload, createdAt, isProcessed, processedAt)
+INSERT OR REPLACE INTO SyncOutbox(id, tableName, recordId, operation, payload, createdAt, isProcessed, processedAt)
 VALUES(?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Mark sync outbox entry as processed

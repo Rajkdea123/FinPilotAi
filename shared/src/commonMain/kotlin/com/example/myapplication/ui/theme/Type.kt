@@ -9,19 +9,49 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun AppTypography(): Typography {
-    val soraBold = FontFamily.SansSerif
-    val dmSansRegular = FontFamily.SansSerif
+    val soraFontFamily = FontFamily.SansSerif
+    val dmSansFontFamily = FontFamily.SansSerif
 
     return Typography(
         headlineLarge = TextStyle(
-            fontFamily = soraBold,
+            fontFamily = soraFontFamily,
             fontWeight = FontWeight.Bold,
             fontSize = 32.sp
         ),
+        headlineMedium = TextStyle(
+            fontFamily = soraFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 28.sp
+        ),
+        headlineSmall = TextStyle(
+            fontFamily = soraFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 22.sp
+        ),
+        titleLarge = TextStyle(
+            fontFamily = soraFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 20.sp
+        ),
+        titleMedium = TextStyle(
+            fontFamily = soraFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        ),
         bodyLarge = TextStyle(
-            fontFamily = dmSansRegular,
+            fontFamily = dmSansFontFamily,
             fontWeight = FontWeight.Normal,
             fontSize = 16.sp
+        ),
+        bodyMedium = TextStyle(
+            fontFamily = dmSansFontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 14.sp
+        ),
+        bodySmall = TextStyle(
+            fontFamily = dmSansFontFamily,
+            fontWeight = FontWeight.Normal,
+            fontSize = 12.sp
         )
     )
 }

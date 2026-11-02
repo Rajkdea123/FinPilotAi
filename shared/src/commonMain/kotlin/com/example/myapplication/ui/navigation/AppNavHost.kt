@@ -28,18 +28,21 @@ import com.example.myapplication.ui.splash.SplashScreen
 import com.example.myapplication.ui.splash.SplashViewModel
 import com.example.myapplication.ui.sync.SyncScreen
 import com.example.myapplication.ui.transactions.TransactionsScreen
+import androidx.compose.ui.Modifier
 import org.koin.compose.koinInject
 
 @Composable
 fun AppNavHost(
     currentRoute: Route,
     onNavigate: (Route) -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var selectedExpenseId by remember { mutableStateOf<String?>(null) }
     var profileSnackbarMessage by remember { mutableStateOf<String?>(null) }
 
-    when (currentRoute) {
+    Box(modifier = modifier) {
+        when (currentRoute) {
         // Authentication flow
         Route.Splash -> {
             val splashViewModel: SplashViewModel = koinInject()
@@ -122,10 +125,12 @@ fun AppNavHost(
 
         // Full-screen routes
         Route.Transactions -> {
-            // TODO: Fix TransactionsScreen compilation errors
-            Box(modifier = androidx.compose.ui.Modifier.fillMaxSize()) {
-                androidx.compose.material3.Text("Transactions Screen - Coming Soon")
-            }
+            TransactionsScreen(
+                onBack = { onBack() },
+                onExpenseClick = { id ->
+                    onNavigate(Route.AddExpenseEdit(id))
+                }
+            )
         }
         Route.AddExpense -> {
             AddExpenseScreen(
@@ -199,4 +204,5 @@ fun AppNavHost(
             )
         }
     }
+}
 }

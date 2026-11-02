@@ -17,7 +17,7 @@ WHERE id = 'current' AND isDeleted = 0;
 
 -- Insert user profile
 insertUserProfile:
-INSERT INTO UserProfile(id, name, email, avatarUrl, version, updatedAt, deviceId, isDeleted, syncState)
+INSERT OR REPLACE INTO UserProfile(id, name, email, avatarUrl, version, updatedAt, deviceId, isDeleted, syncState)
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Update user profile

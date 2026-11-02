@@ -29,7 +29,7 @@ WHERE id = ? AND isDeleted = 0;
 
 -- Insert expense
 insertExpense:
-INSERT INTO Expense(id, amount, category, paymentMethod, date, description, version, updatedAt, deviceId, isDeleted, syncState)
+INSERT OR REPLACE INTO Expense(id, amount, category, paymentMethod, date, description, version, updatedAt, deviceId, isDeleted, syncState)
 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- Update expense

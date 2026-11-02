@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 class GetRecentExpensesUseCase(
     private val expenseRepository: ExpenseRepository
 ) {
-    operator fun invoke(limit: Int = 10): Flow<List<Expense>> {
+    operator fun invoke(limit: Int = 5): Flow<List<Expense>> {
         return expenseRepository.observeRecent(limit)
     }
 }

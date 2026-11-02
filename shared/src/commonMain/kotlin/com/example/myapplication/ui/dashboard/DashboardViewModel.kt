@@ -53,7 +53,7 @@ class DashboardViewModel(
             try {
                 combine(
                     getMonthSummaryUseCase(),
-                    getRecentExpensesUseCase(10)
+                    getRecentExpensesUseCase(5)
                 ) { summary, expenses ->
                     Pair(summary, expenses)
                 }.collect { (summary, expenses) ->
